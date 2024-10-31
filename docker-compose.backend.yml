@@ -1,0 +1,40 @@
+version: '3.9'
+services:
+
+  postgres_db:
+    container_name: postgres-db
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespw
+    volumes:
+      - ./backend/database/postgres/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    profiles: ["database-only-postgres", "development"]
+
+  backend:
+    container_name: backend
+    build:
+      context: ./backend/
+      dockerfile: docker/${ENVIRONMENT}/Dockerfile
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s # Delay before the restart
+        max_attempts: 3
+        window: 120s
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "443:443"
+    env_file:
+      - ./.env
+    volumes:
+      - ./backend:/app
+    profiles: ["production", "development"]
+
+volumes:
+  postgres_data:

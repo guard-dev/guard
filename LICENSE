@@ -1,0 +1,19 @@
+# Server Side Public License (SSPL) Version 1.0
+
+Copyright (C) 2024 Guard.dev
+
+This program is free software: you can redistribute it and/or modify it under the terms of the Server Side Public License, version 1, as published by MongoDB, Inc.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the Server Side Public License for more details.
+
+You should have received a copy of the Server Side Public License along with this program. If not, see <https://www.mongodb.com/licensing/server-side-public-license>.
+
+## Terms
+
+1. **Usage**: You are free to use, modify, and self-host this software. However, you may not offer the software as a service to third parties without complying with Section 13 of the SSPL, which requires making your modifications publicly available.
+
+2. **Redistribution**: If you modify this software and offer it as a publicly hosted service, you must make the entire source code, including your modifications, available under the SSPL.
+
+3. **Commercial Use**: Commercial use of this software is allowed as long as it is not provided as a service. To provide the software as a service, you must obtain a commercial license or comply with Section 13.
+
+For more information, please refer to the full text of the Server Side Public License at <https://www.mongodb.com/licensing/server-side-public-license>.

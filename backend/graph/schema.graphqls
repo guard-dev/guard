@@ -1,0 +1,121 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+#
+
+scalar DateTime
+scalar Upload
+scalar Int64
+
+directive @loggedIn on FIELD_DEFINITION
+directive @isAdmin on FIELD_DEFINITION
+directive @memberTeam on ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
+
+type Team {
+  teamSlug: String!
+  teamName: String!
+  projects(projectSlug: String): [Project!]!
+  members: [TeamMembership!]!
+
+  subscriptionPlans(subscriptionId: Int64): [SubscriptionPlan!]!
+}
+
+type SubscriptionPlan {
+  id: Int64!
+  teamId: Int64!
+  stripeSubscriptionId: String
+  subscriptionData: SubscriptionData
+}
+
+type SubscriptionData {
+  currentPeriodStart: DateTime!
+  currentPeriodEnd: DateTime!
+  status: String!
+  interval: String!
+  planName: String!
+  costInUsd: Int64!
+  lastFourCardDigits: String!
+  resourcesIncluded: Int!
+  resourcesUsed: Int!
+}
+
+type Project {
+  projectSlug: String!
+  projectName: String!
+  accountConnections: [AccountConnection!]!
+  scans(scanId: String): [Scan!]!
+}
+
+type AccountConnection {
+  externalId: String!
+  accountId: String!
+}
+
+type Scan {
+  scanId: String!
+  scanItems: [ScanItem!]!
+  scanCompleted: Boolean!
+  created: Int64!
+  regionCount: Int!
+  serviceCount: Int!
+  resourceCost: Int!
+}
+
+type ScanItem {
+  service: String!
+  region: String!
+  findings: [String!]!
+  summary: String!
+  remedy: String!
+  scanItemEntries: [ScanItemEntry!]!
+  resourceCost: Int!
+}
+
+type ScanItemEntry {
+  findings: [String!]!
+  title: String!
+  summary: String!
+  remedy: String!
+  commands: [String!]!
+  resourceCost: Int!
+}
+
+type Userinfo {
+  userId: Int64!
+  email: String!
+  fullName: String!
+}
+
+type TeamMembership {
+  membershipType: String!
+  user: Userinfo!
+  teamId: Int64!
+  teamSlug: String!
+  teamName: String!
+}
+
+type Query {
+  teams(teamSlug: String @memberTeam): [Team!]! @loggedIn
+  getExternalId: String! @loggedIn
+}
+
+type Mutation {
+  createProject(teamSlug: String! @memberTeam, input: NewProject!): Project! @loggedIn
+  verifyAccountId(accountId: String!): Boolean! @loggedIn
+  startScan(teamSlug: String! @memberTeam, projectSlug: String!, services: [String!]!, regions: [String!]!): String!
+
+  createCheckoutSession(teamSlug: String! @memberTeam, lookUpKey: String!): CheckoutSessionResponse! @loggedIn
+  createPortalSession(teamSlug: String! @memberTeam): PortalSessionResponse! @loggedIn
+}
+
+type CheckoutSessionResponse {
+  sessionId: String!
+}
+
+type PortalSessionResponse {
+  sessionUrl: String!
+}
+
+input NewProject {
+  projectName: String!
+}

@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: |
+  This template creates the GuardSecurityScanRole IAM role in your AWS account 
+  with the necessary read-only permissions for Guard to perform security scans.
+  The role will allow Guard to assume the role using AWS Security Token Service (STS).
+Parameters:
+  ExternalId:
+    Description: |
+      The External ID Guard will use to assume this role. DO NOT CHANGE THIS.
+    Type: String
+
+Resources:
+  GuardSecurityScanRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: GuardSecurityScanRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: "arn:aws:iam::591907732013:root"
+            Action: 'sts:AssumeRole'
+            Condition:
+              StringEquals:
+                'sts:ExternalId': !Ref ExternalId
+      MaxSessionDuration: 3600
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/SecurityAudit
+        - arn:aws:iam::aws:policy/job-function/ViewOnlyAccess
+      Policies:
+        - PolicyName: GuardAdditionalPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'account:Get*'
+                  - 'cloudtrail:GetInsightSelectors'
+                  - 'ec2:Describe*'
+                  - 'ecr:Describe*'
+                  - 'glue:GetConnections'
+                  - 'glue:GetSecurityConfiguration*'
+                  - 'lambda:GetFunction*'
+                  - 'logs:FilterLogEvents'
+                  - 'macie2:GetMacieSession'
+                  - 's3:GetAccountPublicAccessBlock'
+                  - 'securityhub:GetFindings'
+                  - 'ssm:GetDocument'
+                  - 'ssm-incidents:List*'
+                  - 'tag:GetTagKeys'
+                Resource: "*"
+        - PolicyName: GuardApiGatewayViewPrivileges
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'apigateway:GET'
+                Resource:
+                  - 'arn:aws:apigateway:*::/restapis/*'
+                  - 'arn:aws:apigateway:*::/apis/*'
+      Tags:
+        - Key: "Service"
+          Value: "https://www.guard.dev"
+        - Key: "Support"
+          Value: "support@guard.dev"
+        - Key: "CloudFormation"
+          Value: "true"
+        - Key: "Name"
+          Value: "GuardSecurityScanRole"
+
