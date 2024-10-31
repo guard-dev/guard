@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+import subprocess
+
+# Default arguments
+default_args = ["development", "all", "up"]
+
+# If no arguments are given, use the default arguments
+if len(sys.argv) == 1:
+    sys.argv.extend(default_args)
+elif len(sys.argv) < 3:
+    print("Usage: ./script.py <environment> <servicelist> <...docker-compose args>")
+    print("Example: ./start development all up -d")
+    print("Example: ./start production backend up -d")
+    print("Example: ./start production backend down --remove-orphans")
+    sys.exit(1)
+
+# Extract arguments
+environment = sys.argv[1]
+service_list_arg = sys.argv[2]
+
+# Environment configurations, if any
+ports = {
+    "development": {
+        "backend": "8080",
+        "frontend": "3000",
+    },
+    "production": {
+        "backend": "8080",
+        "frontend": "3000",
+    },
+}
+
+# Service to docker-compose file mapping
+service_files = {
+    "backend": "./docker-compose.backend.yml",
+    "frontend": "./docker-compose.frontend.yml",
+    #"kafka": "./docker-compose.kafka.yml",
+}
+
+# Set environment variables based on the environment
+backend_port = ports[environment]["backend"]
+frontend_port = ports[environment]["frontend"]
+os.environ["ENVIRONMENT"] = environment
+os.environ["BACKEND_PORT"] = backend_port
+os.environ["FRONTEND_PORT"] = frontend_port
+
+# Prepare the docker-compose command
+docker_compose_command = [
+    "docker",
+    "compose",
+    "-f", "./docker-compose.yml",
+    "--profile", environment
+]
+
+# Add service-specific compose files if 'all' isn't specified
+if service_list_arg != "all":
+    services = service_list_arg.split(',')
+    for service in services:
+        if service in service_files:
+            docker_compose_command += ["-f", service_files[service]]
+else:
+    # Include all service-specific compose files if 'all' is specified
+    for file in service_files.values():
+        docker_compose_command += ["-f", file]
+
+# Append the remaining docker-compose arguments
+docker_compose_command += sys.argv[3:]
+
+print("Executing the following docker compose command")
+print(" ".join(docker_compose_command))
+
+# Execute the command
+subprocess.run(docker_compose_command)

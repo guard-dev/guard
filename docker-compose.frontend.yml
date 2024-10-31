@@ -1,0 +1,27 @@
+version: '3.9'
+services:
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: docker/${ENVIRONMENT}/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: https://api.guard.dev/graph
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./.env
+    environment:
+      NEXT_SERVER_API_BASE_URL: http://backend:8080/graph
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080/graph
+    volumes:
+      - ./frontend:/app
+      - node_modules:/app/node_modules
+      - next_data:/app/.next
+    profiles: ["development", "production"]
+
+volumes:
+  node_modules:
+  next_data:

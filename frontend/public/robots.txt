@@ -1,0 +1,11 @@
+User-agent: *
+
+Allow: /$        # Allow the index page
+
+Allow: /blog     # Allow the /blog page (if it exists as a standalone page)
+Allow: /blog/    # Allow everything under /blog/ (all subdirectories and pages)
+
+Disallow: /app   # Disallow the /app page (if it exists as a standalone page)
+Disallow: /app/  # Disallow everything under /app/ (all subdirectories and pages)
+
+

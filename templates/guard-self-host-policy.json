@@ -1,0 +1,34 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "account:Get*",
+        "cloudtrail:GetInsightSelectors",
+        "ec2:Describe*",
+        "ecr:Describe*",
+        "glue:GetConnections",
+        "glue:GetSecurityConfiguration*",
+        "lambda:GetFunction*",
+        "logs:FilterLogEvents",
+        "macie2:GetMacieSession",
+        "s3:GetAccountPublicAccessBlock",
+        "securityhub:GetFindings",
+        "ssm:GetDocument",
+        "ssm-incidents:List*",
+        "tag:GetTagKeys",
+        "apigateway:GET"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:Get*",
+        "iam:List*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
