@@ -26,12 +26,14 @@ Guard.dev is free to use in its open-source form, with additional paid plans tha
 ## Installation
 
 1. **Clone the Repository**:
+
    ```bash
    git clone https://github.com/yourusername/guard.dev.git
    cd guard.dev
    ```
 
 2. **Run with Docker Compose**:
+
    ```bash
    docker-compose up -d
    ```
@@ -52,9 +54,11 @@ Guard.dev is free to use in its open-source form, with additional paid plans tha
 ## Supported Services
 
 ### AWS
+
 - IAM, EC2, S3, Lambda, DynamoDB, ECS (more services coming soon)
 
 ### GCP & Azure
+
 - Support for GCP and Azure is coming soon
 
 ## Contributing
@@ -68,6 +72,6 @@ Guard.dev is released under the [Server Side Public License (SSPL)](LICENSE). Th
 ## Get in Touch
 
 - **Website**: [www.guard.dev](https://www.guard.dev)
-- **Support**: support@guard.dev
+- **Support**: <support@guard.dev>
 - **Twitter**: [@GuardDevSec](https://twitter.com/GuardDevSec)
 - **LinkedIn**: [Guard.dev](https://linkedin.com/company/guarddev)
