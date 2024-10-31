@@ -239,7 +239,7 @@ func (q *Queries) CreateNewScanItemEntry(ctx context.Context, arg CreateNewScanI
 }
 
 const createNewTeam = `-- name: CreateNewTeam :one
-INSERT INTO team (team_slug, team_name) VALUES ($1, $2) RETURNING team_id, team_slug, team_name, preferred_insight_email, stripe_customer_id, created
+INSERT INTO team (team_slug, team_name) VALUES ($1, $2) RETURNING team_id, team_slug, team_name, stripe_customer_id, created
 `
 
 type CreateNewTeamParams struct {
@@ -254,7 +254,6 @@ func (q *Queries) CreateNewTeam(ctx context.Context, arg CreateNewTeamParams) (T
 		&i.TeamID,
 		&i.TeamSlug,
 		&i.TeamName,
-		&i.PreferredInsightEmail,
 		&i.StripeCustomerID,
 		&i.Created,
 	)
@@ -677,7 +676,7 @@ func (q *Queries) GetSubscriptionByTeamIdSubscriptionId(ctx context.Context, arg
 }
 
 const getTeamByStripeCustomerId = `-- name: GetTeamByStripeCustomerId :one
-SELECT team_id, team_slug, team_name, preferred_insight_email, stripe_customer_id, created FROM team WHERE stripe_customer_id = $1
+SELECT team_id, team_slug, team_name, stripe_customer_id, created FROM team WHERE stripe_customer_id = $1
 `
 
 func (q *Queries) GetTeamByStripeCustomerId(ctx context.Context, stripeCustomerID sql.NullString) (Team, error) {
@@ -687,7 +686,6 @@ func (q *Queries) GetTeamByStripeCustomerId(ctx context.Context, stripeCustomerI
 		&i.TeamID,
 		&i.TeamSlug,
 		&i.TeamName,
-		&i.PreferredInsightEmail,
 		&i.StripeCustomerID,
 		&i.Created,
 	)
@@ -695,7 +693,7 @@ func (q *Queries) GetTeamByStripeCustomerId(ctx context.Context, stripeCustomerI
 }
 
 const getTeamByTeamId = `-- name: GetTeamByTeamId :one
-SELECT team_id, team_slug, team_name, preferred_insight_email, stripe_customer_id, created FROM team WHERE team_id = $1 LIMIT 1
+SELECT team_id, team_slug, team_name, stripe_customer_id, created FROM team WHERE team_id = $1 LIMIT 1
 `
 
 func (q *Queries) GetTeamByTeamId(ctx context.Context, teamID int64) (Team, error) {
@@ -705,7 +703,6 @@ func (q *Queries) GetTeamByTeamId(ctx context.Context, teamID int64) (Team, erro
 		&i.TeamID,
 		&i.TeamSlug,
 		&i.TeamName,
-		&i.PreferredInsightEmail,
 		&i.StripeCustomerID,
 		&i.Created,
 	)
@@ -713,9 +710,11 @@ func (q *Queries) GetTeamByTeamId(ctx context.Context, teamID int64) (Team, erro
 }
 
 const getTeamByTeamSlug = `-- name: GetTeamByTeamSlug :one
-SELECT team_id, team_slug, team_name, preferred_insight_email, stripe_customer_id, created FROM team WHERE team_slug = $1 LIMIT 1
+
+SELECT team_id, team_slug, team_name, stripe_customer_id, created FROM team WHERE team_slug = $1 LIMIT 1
 `
 
+// ------------------ Team Queries --------------------
 func (q *Queries) GetTeamByTeamSlug(ctx context.Context, teamSlug string) (Team, error) {
 	row := q.db.QueryRowContext(ctx, getTeamByTeamSlug, teamSlug)
 	var i Team
@@ -723,7 +722,6 @@ func (q *Queries) GetTeamByTeamSlug(ctx context.Context, teamSlug string) (Team,
 		&i.TeamID,
 		&i.TeamSlug,
 		&i.TeamName,
-		&i.PreferredInsightEmail,
 		&i.StripeCustomerID,
 		&i.Created,
 	)
@@ -786,7 +784,7 @@ func (q *Queries) GetTeamMembershipsByTeamId(ctx context.Context, teamID int64) 
 }
 
 const getTeamsByUserId = `-- name: GetTeamsByUserId :many
-SELECT team.team_id, team.team_slug, team.team_name, team.preferred_insight_email, team.stripe_customer_id, team.created
+SELECT team.team_id, team.team_slug, team.team_name, team.stripe_customer_id, team.created
 FROM team
 JOIN team_membership on team.team_id = team_membership.team_id
 WHERE team_membership.user_id = $1
@@ -806,7 +804,6 @@ func (q *Queries) GetTeamsByUserId(ctx context.Context, userID int64) ([]Team, e
 			&i.TeamID,
 			&i.TeamSlug,
 			&i.TeamName,
-			&i.PreferredInsightEmail,
 			&i.StripeCustomerID,
 			&i.Created,
 		); err != nil {
@@ -976,38 +973,6 @@ func (q *Queries) SetSubscriptionStripeIdByTeamId(ctx context.Context, arg SetSu
 	return i, err
 }
 
-const updateInsightEmailByProjectIdAndTeamSlug = `-- name: UpdateInsightEmailByProjectIdAndTeamSlug :one
-
-UPDATE team
-SET preferred_insight_email = $1
-WHERE team_slug = $2 AND team_id = (
-    SELECT team_id
-    FROM project
-    WHERE project_id = $3
-) RETURNING team_id, team_slug, team_name, preferred_insight_email, stripe_customer_id, created
-`
-
-type UpdateInsightEmailByProjectIdAndTeamSlugParams struct {
-	PreferredInsightEmail sql.NullString
-	TeamSlug              string
-	ProjectID             int64
-}
-
-// ------------------ Team Queries --------------------
-func (q *Queries) UpdateInsightEmailByProjectIdAndTeamSlug(ctx context.Context, arg UpdateInsightEmailByProjectIdAndTeamSlugParams) (Team, error) {
-	row := q.db.QueryRowContext(ctx, updateInsightEmailByProjectIdAndTeamSlug, arg.PreferredInsightEmail, arg.TeamSlug, arg.ProjectID)
-	var i Team
-	err := row.Scan(
-		&i.TeamID,
-		&i.TeamSlug,
-		&i.TeamName,
-		&i.PreferredInsightEmail,
-		&i.StripeCustomerID,
-		&i.Created,
-	)
-	return i, err
-}
-
 const updateScanCompletedStatus = `-- name: UpdateScanCompletedStatus :one
 UPDATE scan SET scan_completed = $1 WHERE scan_id = $2 RETURNING scan_id, project_id, scan_completed, service_count, region_count, resource_cost, created
 `
@@ -1033,7 +998,7 @@ func (q *Queries) UpdateScanCompletedStatus(ctx context.Context, arg UpdateScanC
 }
 
 const updateTeamStripeCustomerIdByTeamId = `-- name: UpdateTeamStripeCustomerIdByTeamId :one
-UPDATE team SET stripe_customer_id = $2 WHERE team_id = $1 RETURNING team_id, team_slug, team_name, preferred_insight_email, stripe_customer_id, created
+UPDATE team SET stripe_customer_id = $2 WHERE team_id = $1 RETURNING team_id, team_slug, team_name, stripe_customer_id, created
 `
 
 type UpdateTeamStripeCustomerIdByTeamIdParams struct {
@@ -1048,7 +1013,6 @@ func (q *Queries) UpdateTeamStripeCustomerIdByTeamId(ctx context.Context, arg Up
 		&i.TeamID,
 		&i.TeamSlug,
 		&i.TeamName,
-		&i.PreferredInsightEmail,
 		&i.StripeCustomerID,
 		&i.Created,
 	)

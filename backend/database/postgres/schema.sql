@@ -15,7 +15,6 @@ CREATE TABLE team (
   team_id BIGSERIAL PRIMARY KEY NOT NULL,
   team_slug TEXT UNIQUE NOT NULL,
   team_name TEXT NOT NULL,
-  preferred_insight_email TEXT DEFAULT '',
   stripe_customer_id TEXT UNIQUE,
   created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

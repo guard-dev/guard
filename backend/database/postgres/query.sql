@@ -17,15 +17,6 @@ SELECT external_id FROM user_info WHERE email = $1;
 
 -------------------- Team Queries --------------------
 
--- name: UpdateInsightEmailByProjectIdAndTeamSlug :one
-UPDATE team
-SET preferred_insight_email = $1
-WHERE team_slug = $2 AND team_id = (
-    SELECT team_id
-    FROM project
-    WHERE project_id = $3
-) RETURNING *;
-
 -- name: GetTeamByTeamSlug :one
 SELECT * FROM team WHERE team_slug = $1 LIMIT 1;
 

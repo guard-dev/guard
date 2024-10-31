@@ -116,12 +116,11 @@ type SubscriptionPlan struct {
 }
 
 type Team struct {
-	TeamID                int64
-	TeamSlug              string
-	TeamName              string
-	PreferredInsightEmail sql.NullString
-	StripeCustomerID      sql.NullString
-	Created               time.Time
+	TeamID           int64
+	TeamSlug         string
+	TeamName         string
+	StripeCustomerID sql.NullString
+	Created          time.Time
 }
 
 type TeamInvite struct {
