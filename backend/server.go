@@ -33,6 +33,7 @@ func main() {
 
 	godotenv.Load()
 	production := os.Getenv("PRODUCTION") != ""
+	selfhosting := os.Getenv("SELF_HOSTING") != ""
 
 	otelShutdown, err := otelconfig.ConfigureOpenTelemetry()
 	if err != nil {
@@ -54,10 +55,14 @@ func main() {
 
 	Logger := logMiddleware.Logger(ctx)
 
-	payments := paymentsmiddleware.Connect(paymentsmiddleware.PaymentsConnectProps{
-		Logger:   logMiddleware,
-		Database: postgresClient,
-	})
+	var payments *paymentsmiddleware.Payments = nil
+
+	if !selfhosting {
+		payments = paymentsmiddleware.Connect(paymentsmiddleware.PaymentsConnectProps{
+			Logger:   logMiddleware,
+			Database: postgresClient,
+		})
+	}
 
 	awsMiddleware := awsmiddleware.Connect(logMiddleware, gemininClient)
 
@@ -73,7 +78,7 @@ func main() {
 	graphRouter := getGraphqlSrv()
 	graphRouter.Handle("/", srv)
 
-	if production == false {
+	if !production {
 		graphRouter.Handle("/playground", playground.Handler("GraphQL Playground", "/graph"))
 		Logger.Info("[Graph] Connect to http://localhost:" + port + "/graph for GraphQL server")
 		Logger.Info("[Graph] Connect to http://localhost:" + port + "/graph/playground for GraphQL playground")
@@ -83,7 +88,10 @@ func main() {
 
 	router := chi.NewRouter()
 	router.Mount("/graph", graphRouter)
-	router.Post("/payments", payments.HandleStripeWebhook)
+
+	if !selfhosting {
+		router.Post("/payments", payments.HandleStripeWebhook)
+	}
 
 	log.Fatal(http.ListenAndServe(":"+port, router))
 }

@@ -9,6 +9,7 @@ import (
 	"guarddev/logger"
 	"guarddev/modelapi/geminiapi"
 	"guarddev/paymentsmiddleware"
+	"os"
 	"strings"
 	"time"
 
@@ -88,6 +89,11 @@ func Connnect(ctx context.Context, args GraphConnectProps) *handler.Server {
 		tracer := otel.Tracer("graph/SubActive")
 		ctx, span := tracer.Start(ctx, "SubActive")
 		defer span.End()
+
+		selfhosting := os.Getenv("SELF_HOSTING") != ""
+		if selfhosting {
+			return next(ctx)
+		}
 
 		oc := graphql.GetOperationContext(ctx)
 		vars := oc.Variables

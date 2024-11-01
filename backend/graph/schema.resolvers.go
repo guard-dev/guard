@@ -334,6 +334,11 @@ func (r *mutationResolver) CreateCheckoutSession(ctx context.Context, teamSlug s
 	ctx, span := tracer.Start(ctx, "CreateCheckoutSession")
 	defer span.End()
 
+	selfhosting := os.Getenv("SELF_HOSTING") != ""
+	if selfhosting {
+		return model.CheckoutSessionResponse{}, fmt.Errorf("In self-hosting mode")
+	}
+
 	production := os.Getenv("PRODUCTION") != ""
 
 	baseUrl := "https://www.guard.dev"
@@ -548,7 +553,9 @@ func (r *subscriptionPlanResolver) StripeSubscriptionID(ctx context.Context, obj
 	ctx, span := tracer.Start(ctx, "StripeSubscriptionID")
 	defer span.End()
 
-	if obj.StripeSubscriptionID.Valid == false {
+	selfhosting := os.Getenv("SELF_HOSTING") != ""
+
+	if obj.StripeSubscriptionID.Valid == false || selfhosting {
 		return nil, nil
 	}
 	subscriptionId := obj.StripeSubscriptionID.String

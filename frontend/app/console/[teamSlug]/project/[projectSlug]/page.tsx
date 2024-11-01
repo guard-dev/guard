@@ -320,15 +320,18 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
               </Table>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <div className="text-xl">
-                Current Plan
-              </div>
-              <ShowSubscriptionInfo
-                plan={currentSubscription!}
-                teamSlug={teamSlug}
-              />
-            </div>
+            {
+              process.env.NEXT_PUBLIC_SELF_HOSTING ? <div /> :
+                <div className="flex flex-col gap-2">
+                  <div className="text-xl">
+                    Current Plan
+                  </div>
+                  <ShowSubscriptionInfo
+                    plan={currentSubscription!}
+                    teamSlug={teamSlug}
+                  />
+                </div>
+            }
 
           </TabsContent>
         </Tabs>
