@@ -51,6 +51,8 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
     await startScanMutation({ variables })
   };
 
+  const subActive = currentSubscription !== undefined && currentSubscription?.stripeSubscriptionId !== null;
+
   const router = useRouter();
 
   const [regions, setRegions] = useState<string[]>([]);
@@ -184,34 +186,44 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
                       <Button>New Scan</Button>
                     </DialogTrigger>
                     <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>New Scan</DialogTitle>
-                        <DialogDescription>
-                          Select the services and regions you want to scan.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div>
-                        Services
-                      </div>
-                      <div>
-                        <ComboboxDemo availableOptions={availableServices} value={services} setValue={setServices} />
-                      </div>
-                      <div>
-                        Regions
-                      </div>
-                      <div>
-                        <ComboboxDemo availableOptions={availableRegions} value={regions} setValue={setRegions} />
-                      </div>
-                      <DialogFooter className="pt-5">
-                        <DialogClose asChild>
-                          <Button variant={"secondary"}>
-                            Cancel
-                          </Button>
-                        </DialogClose>
-                        <Button onClick={handleStartScan} disabled={loading}>
-                          Start Scan
-                        </Button>
-                      </DialogFooter>
+                      {
+                        subActive ?
+                          <ShowSubscriptionInfo
+                            plan={currentSubscription!}
+                            teamSlug={teamSlug}
+                          />
+                          :
+                          <>
+                            <DialogHeader>
+                              <DialogTitle>New Scan</DialogTitle>
+                              <DialogDescription>
+                                Select the services and regions you want to scan.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div>
+                              Services
+                            </div>
+                            <div>
+                              <ComboboxDemo availableOptions={availableServices} value={services} setValue={setServices} />
+                            </div>
+                            <div>
+                              Regions
+                            </div>
+                            <div>
+                              <ComboboxDemo availableOptions={availableRegions} value={regions} setValue={setRegions} />
+                            </div>
+                            <DialogFooter className="pt-5">
+                              <DialogClose asChild>
+                                <Button variant={"secondary"}>
+                                  Cancel
+                                </Button>
+                              </DialogClose>
+                              <Button onClick={handleStartScan} disabled={loading}>
+                                Start Scan
+                              </Button>
+                            </DialogFooter>
+                          </>
+                      }
                     </DialogContent>
                   </Dialog>
 
