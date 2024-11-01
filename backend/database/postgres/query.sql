@@ -178,8 +178,8 @@ UPDATE subscription_plan SET stripe_subscription_id = $2 WHERE team_id = $1 RETU
 DELETE FROM subscription_plan WHERE stripe_subscription_id = $1 RETURNING *;
 
 -- name: ResetSubscriptionResourcesUsed :one
-UPDATE subscription_plan 
-SET resources_used = 0 
-WHERE team_id = $1 
+UPDATE subscription_plan
+SET resources_used = 0
+WHERE team_id = $1
 RETURNING *;
 

@@ -946,9 +946,9 @@ func (q *Queries) IncrementSubscriptionResourcesUsedByTeamId(ctx context.Context
 }
 
 const resetSubscriptionResourcesUsed = `-- name: ResetSubscriptionResourcesUsed :one
-UPDATE subscription_plan 
-SET resources_used = 0 
-WHERE team_id = $1 
+UPDATE subscription_plan
+SET resources_used = 0
+WHERE team_id = $1
 RETURNING id, team_id, stripe_subscription_id, resources_included, resources_used, created
 `
 

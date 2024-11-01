@@ -55,6 +55,7 @@ type DirectiveRoot struct {
 	IsAdmin    func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 	LoggedIn   func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 	MemberTeam func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
+	SubActive  func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -1618,8 +1619,30 @@ func (ec *executionContext) _Mutation_startScan(ctx context.Context, field graph
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().StartScan(rctx, fc.Args["teamSlug"].(string), fc.Args["projectSlug"].(string), fc.Args["services"].([]string), fc.Args["regions"].([]string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().StartScan(rctx, fc.Args["teamSlug"].(string), fc.Args["projectSlug"].(string), fc.Args["services"].([]string), fc.Args["regions"].([]string))
+		}
+
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.SubActive == nil {
+				var zeroVal string
+				return zeroVal, errors.New("directive subActive is not implemented")
+			}
+			return ec.directives.SubActive(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be string`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)

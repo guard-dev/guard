@@ -84,6 +84,32 @@ func Connnect(ctx context.Context, args GraphConnectProps) *handler.Server {
 		return next(ctx)
 	}
 
+	gqlConfig.Directives.SubActive = func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
+		tracer := otel.Tracer("graph/SubActive")
+		ctx, span := tracer.Start(ctx, "SubActive")
+		defer span.End()
+
+		teamSlugField := obj.(map[string]interface{})["teamSlug"]
+		if teamSlugField == nil {
+			span.RecordError(fmt.Errorf("missing teamSlug"))
+			return nil, fmt.Errorf("missing teamSlug")
+		}
+
+		teamSlug := teamSlugField.(string)
+		active, err := subActive(ctx, teamSlug, args.Database)
+		if err != nil {
+			span.RecordError(err)
+			return nil, fmt.Errorf("error checking subscription: %w", err)
+		}
+
+		if !active {
+			span.RecordError(fmt.Errorf("subscription not active"))
+			return nil, fmt.Errorf("subscription required")
+		}
+
+		return next(ctx)
+	}
+
 	var MB int64 = 1 << 20
 
 	gqlServer := handler.New(NewExecutableSchema(gqlConfig))
@@ -140,6 +166,26 @@ func Connnect(ctx context.Context, args GraphConnectProps) *handler.Server {
 	})
 
 	return gqlServer
+}
+
+func subActive(ctx context.Context, teamSlug string, db *postgres.Database) (bool, error) {
+	tracer := otel.Tracer("graph/subActive")
+	ctx, span := tracer.Start(ctx, "subActive")
+	defer span.End()
+
+	team, err := db.GetTeamByTeamSlug(ctx, teamSlug)
+	if err != nil {
+		span.RecordError(err)
+		return false, fmt.Errorf("failed to get team: %w", err)
+	}
+
+	sub, err := db.GetSubscriptionByTeamId(ctx, team.TeamID)
+	if err != nil {
+		span.RecordError(err)
+		return false, fmt.Errorf("failed to get subscription: %w", err)
+	}
+
+	return sub.StripeSubscriptionID.Valid, nil
 }
 
 func memberTeam(ctx context.Context, teamSlug string, db *postgres.Database) bool {

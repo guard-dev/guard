@@ -10,6 +10,7 @@ scalar Int64
 directive @loggedIn on FIELD_DEFINITION
 directive @isAdmin on FIELD_DEFINITION
 directive @memberTeam on ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
+directive @subActive on FIELD_DEFINITION
 
 type Team {
   teamSlug: String!
@@ -102,7 +103,7 @@ type Query {
 type Mutation {
   createProject(teamSlug: String! @memberTeam, input: NewProject!): Project! @loggedIn
   verifyAccountId(accountId: String!): Boolean! @loggedIn
-  startScan(teamSlug: String! @memberTeam, projectSlug: String!, services: [String!]!, regions: [String!]!): String!
+  startScan(teamSlug: String! @memberTeam, projectSlug: String!, services: [String!]!, regions: [String!]!): String! @subActive
 
   createCheckoutSession(teamSlug: String! @memberTeam, lookUpKey: String!): CheckoutSessionResponse! @loggedIn
   createPortalSession(teamSlug: String! @memberTeam): PortalSessionResponse! @loggedIn
