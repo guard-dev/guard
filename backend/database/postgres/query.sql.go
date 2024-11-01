@@ -123,23 +123,33 @@ func (q *Queries) CreateNewProject(ctx context.Context, arg CreateNewProjectPara
 
 const createNewScan = `-- name: CreateNewScan :one
 
-INSERT INTO scan (project_id, region_count, service_count) VALUES ($1, $2, $3) RETURNING scan_id, project_id, scan_completed, service_count, region_count, resource_cost, created
+INSERT INTO scan (project_id, region_count, service_count, services, regions) VALUES ($1, $2, $3, $4, $5) RETURNING scan_id, project_id, scan_completed, regions, services, service_count, region_count, resource_cost, created
 `
 
 type CreateNewScanParams struct {
 	ProjectID    int64
 	RegionCount  int32
 	ServiceCount int32
+	Services     []string
+	Regions      []string
 }
 
 // ------------------ Scan Queries --------------------
 func (q *Queries) CreateNewScan(ctx context.Context, arg CreateNewScanParams) (Scan, error) {
-	row := q.db.QueryRowContext(ctx, createNewScan, arg.ProjectID, arg.RegionCount, arg.ServiceCount)
+	row := q.db.QueryRowContext(ctx, createNewScan,
+		arg.ProjectID,
+		arg.RegionCount,
+		arg.ServiceCount,
+		pq.Array(arg.Services),
+		pq.Array(arg.Regions),
+	)
 	var i Scan
 	err := row.Scan(
 		&i.ScanID,
 		&i.ProjectID,
 		&i.ScanCompleted,
+		pq.Array(&i.Regions),
+		pq.Array(&i.Services),
 		&i.ServiceCount,
 		&i.RegionCount,
 		&i.ResourceCost,
@@ -443,7 +453,7 @@ func (q *Queries) GetProjectsByTeamId(ctx context.Context, teamID int64) ([]Proj
 }
 
 const getScanByScanIdProjectId = `-- name: GetScanByScanIdProjectId :one
-SELECT scan_id, project_id, scan_completed, service_count, region_count, resource_cost, created FROM scan WHERE project_id = $1 AND scan_id = $2
+SELECT scan_id, project_id, scan_completed, regions, services, service_count, region_count, resource_cost, created FROM scan WHERE project_id = $1 AND scan_id = $2
 `
 
 type GetScanByScanIdProjectIdParams struct {
@@ -458,6 +468,8 @@ func (q *Queries) GetScanByScanIdProjectId(ctx context.Context, arg GetScanBySca
 		&i.ScanID,
 		&i.ProjectID,
 		&i.ScanCompleted,
+		pq.Array(&i.Regions),
+		pq.Array(&i.Services),
 		&i.ServiceCount,
 		&i.RegionCount,
 		&i.ResourceCost,
@@ -564,7 +576,7 @@ func (q *Queries) GetScanItemsByScanId(ctx context.Context, scanID uuid.UUID) ([
 }
 
 const getScansByProjectId = `-- name: GetScansByProjectId :many
-SELECT scan_id, project_id, scan_completed, service_count, region_count, resource_cost, created FROM scan WHERE project_id = $1
+SELECT scan_id, project_id, scan_completed, regions, services, service_count, region_count, resource_cost, created FROM scan WHERE project_id = $1
 `
 
 func (q *Queries) GetScansByProjectId(ctx context.Context, projectID int64) ([]Scan, error) {
@@ -580,6 +592,8 @@ func (q *Queries) GetScansByProjectId(ctx context.Context, projectID int64) ([]S
 			&i.ScanID,
 			&i.ProjectID,
 			&i.ScanCompleted,
+			pq.Array(&i.Regions),
+			pq.Array(&i.Services),
 			&i.ServiceCount,
 			&i.RegionCount,
 			&i.ResourceCost,
@@ -881,7 +895,7 @@ func (q *Queries) IncrementScanItemResourceCostByScanItemid(ctx context.Context,
 }
 
 const incrementScanResourceCostByScanId = `-- name: IncrementScanResourceCostByScanId :one
-UPDATE scan SET resource_cost = resource_cost + $1 WHERE scan_id = $2 RETURNING scan_id, project_id, scan_completed, service_count, region_count, resource_cost, created
+UPDATE scan SET resource_cost = resource_cost + $1 WHERE scan_id = $2 RETURNING scan_id, project_id, scan_completed, regions, services, service_count, region_count, resource_cost, created
 `
 
 type IncrementScanResourceCostByScanIdParams struct {
@@ -896,6 +910,8 @@ func (q *Queries) IncrementScanResourceCostByScanId(ctx context.Context, arg Inc
 		&i.ScanID,
 		&i.ProjectID,
 		&i.ScanCompleted,
+		pq.Array(&i.Regions),
+		pq.Array(&i.Services),
 		&i.ServiceCount,
 		&i.RegionCount,
 		&i.ResourceCost,
@@ -974,7 +990,7 @@ func (q *Queries) SetSubscriptionStripeIdByTeamId(ctx context.Context, arg SetSu
 }
 
 const updateScanCompletedStatus = `-- name: UpdateScanCompletedStatus :one
-UPDATE scan SET scan_completed = $1 WHERE scan_id = $2 RETURNING scan_id, project_id, scan_completed, service_count, region_count, resource_cost, created
+UPDATE scan SET scan_completed = $1 WHERE scan_id = $2 RETURNING scan_id, project_id, scan_completed, regions, services, service_count, region_count, resource_cost, created
 `
 
 type UpdateScanCompletedStatusParams struct {
@@ -989,6 +1005,8 @@ func (q *Queries) UpdateScanCompletedStatus(ctx context.Context, arg UpdateScanC
 		&i.ScanID,
 		&i.ProjectID,
 		&i.ScanCompleted,
+		pq.Array(&i.Regions),
+		pq.Array(&i.Services),
 		&i.ServiceCount,
 		&i.RegionCount,
 		&i.ResourceCost,

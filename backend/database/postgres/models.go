@@ -76,6 +76,8 @@ type Scan struct {
 	ScanID        uuid.UUID
 	ProjectID     int64
 	ScanCompleted bool
+	Regions       []string
+	Services      []string
 	ServiceCount  int32
 	RegionCount   int32
 	ResourceCost  int32

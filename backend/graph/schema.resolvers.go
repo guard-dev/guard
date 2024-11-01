@@ -205,6 +205,8 @@ func (r *mutationResolver) StartScan(ctx context.Context, teamSlug string, proje
 		ProjectID:    pj.ProjectID,
 		RegionCount:  int32(len(regions)),
 		ServiceCount: int32(len(services)),
+		Services:     services,
+		Regions:      regions,
 	})
 
 	// start goroutine to process all the scans

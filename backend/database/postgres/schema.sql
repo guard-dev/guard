@@ -62,6 +62,8 @@ CREATE TABLE scan (
   scan_id UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
   project_id BIGINT REFERENCES project (project_id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
   scan_completed BOOLEAN NOT NULL DEFAULT false,
+  regions TEXT[],
+  services TEXT[],
   service_count INT NOT NULL DEFAULT 0,
   region_count INT NOT NULL DEFAULT 0,
   resource_cost INT NOT NULL DEFAULT 0,  -- Total resource cost for the scan

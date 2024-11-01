@@ -96,7 +96,7 @@ SELECT * FROM account_connection WHERE project_id = $1;
 -------------------- Scan Queries --------------------
 
 -- name: CreateNewScan :one
-INSERT INTO scan (project_id, region_count, service_count) VALUES ($1, $2, $3) RETURNING *;
+INSERT INTO scan (project_id, region_count, service_count, services, regions) VALUES ($1, $2, $3, $4, $5) RETURNING *;
 
 -- name: IncrementScanResourceCostByScanId :one
 UPDATE scan SET resource_cost = resource_cost + $1 WHERE scan_id = $2 RETURNING *;
