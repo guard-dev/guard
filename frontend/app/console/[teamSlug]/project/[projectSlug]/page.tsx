@@ -187,7 +187,7 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
                     </DialogTrigger>
                     <DialogContent>
                       {
-                        !subActive ?
+                        !subActive && !process.env.NEXT_PUBLIC_SELF_HOSTING ?
                           <ShowSubscriptionInfo
                             plan={currentSubscription!}
                             teamSlug={teamSlug}
