@@ -89,7 +89,10 @@ func Connnect(ctx context.Context, args GraphConnectProps) *handler.Server {
 		ctx, span := tracer.Start(ctx, "SubActive")
 		defer span.End()
 
-		teamSlugField := obj.(map[string]interface{})["teamSlug"]
+		oc := graphql.GetOperationContext(ctx)
+		vars := oc.Variables
+		teamSlugField := vars["teamSlug"]
+
 		if teamSlugField == nil {
 			span.RecordError(fmt.Errorf("missing teamSlug"))
 			return nil, fmt.Errorf("missing teamSlug")
