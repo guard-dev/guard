@@ -187,7 +187,7 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
                     </DialogTrigger>
                     <DialogContent>
                       {
-                        subActive ?
+                        !subActive ?
                           <ShowSubscriptionInfo
                             plan={currentSubscription!}
                             teamSlug={teamSlug}
