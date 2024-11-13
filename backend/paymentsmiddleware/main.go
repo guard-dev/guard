@@ -447,15 +447,18 @@ func (p *Payments) GetSubscriptionPlanData(ctx context.Context, subscriptionId s
 		return nil, fmt.Errorf("failed to fetch subscription product: %w", err)
 	}
 
-	paymentMethodId := subPlan.DefaultPaymentMethod.ID
-	lastFourCardDigits, err := p.GetLast4CardDigits(ctx, paymentMethodId)
-	if err != nil {
-		span.RecordError(err)
-		p.logger.Logger(ctx).Error(
-			"[paymentsmiddleware/GetSubscriptionPlanData] Unable to fetch card details",
-			zap.Error(err),
-			zap.String("payment_method_id", paymentMethodId))
-		return nil, fmt.Errorf("failed to fetch card details: %w", err)
+	lastFourCardDigits := "XXXX"
+	if subPlan.DefaultPaymentMethod != nil {
+		paymentMethodId := subPlan.DefaultPaymentMethod.ID
+		lastFourCardDigits, err = p.GetLast4CardDigits(ctx, paymentMethodId)
+		if err != nil {
+			span.RecordError(err)
+			p.logger.Logger(ctx).Error(
+				"[paymentsmiddleware/GetSubscriptionPlanData] Unable to fetch card details",
+				zap.Error(err),
+				zap.String("payment_method_id", paymentMethodId))
+			return nil, fmt.Errorf("failed to fetch card details: %w", err)
+		}
 	}
 
 	subscriptionData := model.SubscriptionData{
