@@ -5,7 +5,7 @@ import { useMutation, useQuery } from "@apollo/client";
 import { GET_PROJECT_INFO, START_SCAN } from "./gql";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
-import { Dialog, DialogTrigger, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ComboboxDemo } from "./combobox";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -31,13 +31,15 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
   const teamSlug = params.teamSlug;
   const projectSlug = params.projectSlug;
 
-  const { data, loading: dataLoading } = useQuery<GetProjectInfoQuery>(GET_PROJECT_INFO, { variables: { teamSlug, projectSlug }, pollInterval: 10000 });
+  const { data, loading: dataLoading, refetch } = useQuery<GetProjectInfoQuery>(GET_PROJECT_INFO, { variables: { teamSlug, projectSlug }, pollInterval: 10000 });
 
   const currentSubscription = data?.teams[0].subscriptionPlans[0];
 
   const project = data?.teams[0].projects[0];
   const scans = project?.scans;
   const connections = project?.accountConnections;
+
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const [startScanMutation, { data: scanData, loading }] = useMutation<StartScanMutation>(START_SCAN);
 
@@ -163,7 +165,8 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
 
   useEffect(() => {
     if (scanData) {
-      router.push(`/console/${teamSlug}/project/${projectSlug}/scan/${scanData.startScan}`)
+      refetch();
+      setDialogOpen(false);
     }
   }, [scanData])
 
@@ -181,10 +184,8 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
             ) : (
               <div>
                 <div className="flex justify-between items-center mb-4">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button>New Scan</Button>
-                    </DialogTrigger>
+                  <Button onClick={() => setDialogOpen(true)}>New Scan</Button>
+                  <Dialog open={dialogOpen} onOpenChange={(e) => setDialogOpen(e)}>
                     <DialogContent>
                       {
                         !subActive && !process.env.NEXT_PUBLIC_SELF_HOSTING ?
@@ -227,14 +228,16 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
                     </DialogContent>
                   </Dialog>
 
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div>
-                      Resources Used: {currentSubscription?.subscriptionData?.resourcesUsed || 0}
+                  {process.env.NEXT_PUBLIC_SELF_HOSTING ? <div /> :
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div>
+                        Resources Used: {currentSubscription?.subscriptionData?.resourcesUsed || 0}
+                      </div>
+                      <div>
+                        Resources Included: {currentSubscription?.subscriptionData?.resourcesIncluded || 0}
+                      </div>
                     </div>
-                    <div>
-                      Resources Included: {currentSubscription?.subscriptionData?.resourcesIncluded || 0}
-                    </div>
-                  </div>
+                  }
                 </div>
                 <div className="rounded-md border">
                   <Table>
@@ -259,9 +262,11 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
                         table.getRowModel().rows.map((row) => (
                           <TableRow
                             key={row.id}
-                            className="cursor-pointer hover:bg-muted/50"
+                            className={`${!row.original.scanCompleted ? 'opacity-50' : 'hover:bg-muted/50 cursor-pointer'}`}
                             onClick={() => {
-                              router.push(`/console/${teamSlug}/project/${projectSlug}/scan/${row.original.scanId}`)
+                              if (row.original.scanCompleted) {
+                                router.push(`/console/${teamSlug}/project/${projectSlug}/scan/${row.original.scanId}`)
+                              }
                             }}
                           >
                             {row.getVisibleCells().map((cell) => (

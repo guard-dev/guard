@@ -201,7 +201,7 @@ export function DataTable({ data: _data, scanCompleted }: DataTableProps) {
                   <SheetTrigger asChild>
                     <TableRow className="cursor-pointer hover:bg-muted/50">
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
+                        <TableCell key={cell.id} onClick={() => console.log("hello")}>
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
                       ))}
