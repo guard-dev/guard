@@ -27,10 +27,6 @@ const ScanPage = ({ params }: { params: { teamSlug: string; projectSlug: string;
     }
   }, [data])
 
-  useEffect(() => {
-    console.log({ scans });
-  }, [scans])
-
   const LoadingSkeleton = () => (
     <div className="w-full">
       <div className="flex items-center py-4">
