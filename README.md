@@ -40,18 +40,7 @@ Guard.dev is an open-source, AI-powered cloud security tool designed to scan and
 
 To set up Guard.dev for use, you will need to configure several external services:
 
-### 1. Authentication and Login
-
-Guard.dev uses [Clerk.com](https://clerk.com) to handle user authentication and login. To set this up:
-
-- Follow the guide at [Clerk Quickstart Setup](https://clerk.com/docs/quickstarts/setup-clerk).
-- After setting up Clerk, obtain the following environment variables:
-  - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Your Clerk publishable key.
-  - `CLERK_SECRET_KEY`: Your Clerk secret key.
-- Refer to the [Clerk Next.js Quickstart](https://clerk.com/docs/quickstarts/nextjs) for further details on getting these keys.
-- Update the `.env` file to include the necessary environment variables for Clerk.
-
-### 2. AWS Account Linking
+### 1. AWS Account Linking
 
 For self-hosting Guard.dev, follow these steps to set up an IAM User with the required permissions:
 
@@ -69,7 +58,7 @@ For self-hosting Guard.dev, follow these steps to set up an IAM User with the re
 
 This IAM User will have the necessary permissions for Guard to perform cloud security scans across your AWS resources.
 
-### 3. LLM Scanning with Google Gemini
+### 2. LLM Scanning with Google Gemini
 
 Guard.dev leverages Google Gemini for LLM-based scans.
 
@@ -81,8 +70,6 @@ Guard.dev leverages Google Gemini for LLM-based scans.
 
 Update the `.env` file with the following environment variables:
 
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` for Clerk authentication.
-- `CLERK_SECRET_KEY` for Clerk authentication.
 - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` for AWS Integration.
 - `GEMINI_SECRET_KEY` for LLM scans.
 
