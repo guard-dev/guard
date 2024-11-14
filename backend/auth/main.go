@@ -26,6 +26,30 @@ func Middleware() func(http.Handler) http.Handler {
 			ctx, span := tracer.Start(r.Context(), "AuthMiddleware")
 			defer span.End()
 
+			selfHosting := os.Getenv("SELF_HOSTING") != ""
+			if selfHosting {
+				firstName := "Self"
+				lastName := "Hosted"
+				emailID := "mock_email_id"
+				email := "support@guard.dev"
+				user := clerk.User{
+					ID:                    "mock_user_id",
+					FirstName:             &firstName,
+					LastName:              &lastName,
+					PrimaryEmailAddressID: &emailID,
+					EmailAddresses: []clerk.EmailAddress{
+						{
+							ID:           emailID,
+							EmailAddress: email,
+						},
+					},
+				}
+				ctx = AttachContext(ctx, &user)
+				r = r.WithContext(ctx)
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			vercelEnv := r.Header.Get("vercel_env")
 			clientKey := os.Getenv("CLERK_SECRET_KEY")
 
