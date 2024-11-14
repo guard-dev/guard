@@ -11,10 +11,21 @@ export const GetApolloClient = (ssrMode: boolean, getToken: any) => {
     process.env.VERCEL_ENV || process.env.NEXT_PUBLIC_VERCEL_ENV;
 
   const vercel_env = vercel_environent ? vercel_environent : 'development';
+  const selfHosting = process.env.NEXT_PUBLIC_SELF_HOSTING === 'true';
 
   const httpLink: any = createUploadLink({ uri: apiServer });
 
   const authMiddleware = setContext(async (_, { headers }) => {
+    if (selfHosting) {
+      return {
+        headers: {
+          ...headers,
+          authorization: 'Bearer self-hosted',
+          vercel_env,
+        },
+      };
+    }
+
     const token = await getToken({ template: 'Guard_GQL_Server' });
     return {
       headers: {

@@ -2,6 +2,8 @@ import { DarkModeToggle } from "@/components/color-mode-toggle";
 import { UserButton } from "@clerk/nextjs";
 
 const Navbar = () => {
+  const selfHosting = process.env.NEXT_PUBLIC_SELF_HOSTING === 'true';
+
   return (
     <div className="w-full items-center justify-center flex px-5 py-2 border-b min-h-[53px]">
 
@@ -14,7 +16,7 @@ const Navbar = () => {
 
         <div className="flex flex-row items-center justify-center gap-2">
           <DarkModeToggle />
-          <UserButton />
+          {!selfHosting && <UserButton />}
         </div>
       </div>
     </div>

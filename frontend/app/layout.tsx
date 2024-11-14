@@ -29,27 +29,37 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const selfHosting = process.env.NEXT_PUBLIC_SELF_HOSTING === 'true';
+
+  const content = (
+    <html lang="en">
+      <CSPostHogProvider>
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        >
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Analytics />
+            {children}
+          </ThemeProvider>
+        </body>
+      </CSPostHogProvider>
+    </html>
+  );
+
+  // Skip ClerkProvider and wrap directly with ApolloProvider for self-hosting
+  if (selfHosting) {
+    return <ApolloProviderWrapper>{content}</ApolloProviderWrapper>;
+  }
+
+  // Normal flow with Clerk authentication
   return (
     <ClerkProvider>
-      <ApolloProviderWrapper>
-        <html lang="en">
-          <CSPostHogProvider>
-            <body
-              className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-            >
-              <ThemeProvider
-                attribute="class"
-                defaultTheme="system"
-                enableSystem
-                disableTransitionOnChange
-              >
-                <Analytics />
-                {children}
-              </ThemeProvider>
-            </body>
-          </CSPostHogProvider>
-        </html>
-      </ApolloProviderWrapper>
+      <ApolloProviderWrapper>{content}</ApolloProviderWrapper>
     </ClerkProvider>
   );
 }
