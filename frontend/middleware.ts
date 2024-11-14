@@ -1,13 +1,29 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
+// Default middleware for self-hosted mode
+function selfHostedMiddleware(request: NextRequest) {
+  return NextResponse.next();
+}
 
-const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)', '/'])
-
-export default clerkMiddleware((auth, request) => {
-  if (!isPublicRoute(request)) {
-    auth().protect()
+// Create the middleware based on hosting mode
+const middleware = () => {
+  if (process.env.NEXT_PUBLIC_SELF_HOSTING === 'true') {
+    return selfHostedMiddleware;
   }
-})
+
+  // Only import and use Clerk in non-self-hosted mode
+  const { clerkMiddleware, createRouteMatcher } = require("@clerk/nextjs/server");
+  const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)', '/'])
+
+  return clerkMiddleware((auth: any, request: any) => {
+    if (!isPublicRoute(request)) {
+      auth().protect()
+    }
+  });
+}
+
+export default middleware();
 
 export const config = {
   matcher: [
