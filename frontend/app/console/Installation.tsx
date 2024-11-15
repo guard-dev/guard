@@ -27,7 +27,7 @@ const Installation = ({ externalId, refetch }: { externalId: string, refetch: ()
   const [installMethod, setInstallMethod] = useState('cloudformation');
   const [accountId, setAccountId] = useState('');
 
-  const [verifyAccountId, { data, loading }] = useMutation<VerifyAccountIdMutation>(VERIFY_ACCOUNT_ID, { variables: { accountId } });
+  const [verifyAccountId, { data, loading, error }] = useMutation<VerifyAccountIdMutation>(VERIFY_ACCOUNT_ID, { variables: { accountId } });
 
   useEffect(() => {
     if (data?.verifyAccountId) refetch();
@@ -43,7 +43,7 @@ const Installation = ({ externalId, refetch }: { externalId: string, refetch: ()
           <div className="flex flex-col gap-2">
             <p>1. Go to the AWS IAM Console and create a new IAM User with programmatic access.</p>
             <p>2. Attach the policy document provided in the Guard repository:</p>
-            <div className="font-mono text-sm p-2 bg-gray-100 rounded">
+            <div className="font-mono text-sm p-2 bg-neutral-100 dark:bg-neutral-900 rounded">
               <Link target="_blank" href="https://github.com/guard-dev/guard/blob/main/templates/guard-self-host-policy.json">
                 guard-self-host-policy.json
               </Link>
@@ -58,7 +58,7 @@ const Installation = ({ externalId, refetch }: { externalId: string, refetch: ()
             </div>
           </div>
           {data?.verifyAccountId === true && <div>Verified. Redirecting...</div>}
-          {data?.verifyAccountId === false && <div>Could not verify account. Please make sure that the IAM User has the correct permissions and the account ID is correct.</div>}
+          {error && <div>{error.message}</div>}
         </div>
       );
     } else {
@@ -94,7 +94,7 @@ const Installation = ({ externalId, refetch }: { externalId: string, refetch: ()
                 </div>
               </div>
               {data?.verifyAccountId === true && <div>Verified. Redirecting...</div>}
-              {data?.verifyAccountId === false && <div>Could not verify account. Please make sure that the CloudFormation stack is created and the account ID is correct.</div>}
+              {error && <div>Could not verify account. Please make sure that the CloudFormation stack is created and the account ID is correct.</div>}
             </div>
           );
         default:
