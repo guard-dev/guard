@@ -196,7 +196,7 @@ func (g *Gemini) generateCommands(ctx context.Context, service, region, summary,
 
 	generateCommandsFunc := GetGenerateCommandsFunction()
 
-	model := g.client.GenerativeModel("gemini-1.5-flash-002")
+	model := g.client.GenerativeModel("gemini-1.5-pro-002")
 	model.SystemInstruction = &genai.Content{
 		Parts: []genai.Part{genai.Text(systemPrompt)},
 	}
