@@ -5,7 +5,7 @@ import os
 import subprocess
 
 # Default arguments
-default_args = ["development", "all", "up"]
+default_args = ["production", "all", "up"]
 
 # If no arguments are given, use the default arguments
 if len(sys.argv) == 1:
