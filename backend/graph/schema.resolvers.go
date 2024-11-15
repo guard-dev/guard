@@ -113,6 +113,18 @@ func (r *mutationResolver) VerifyAccountID(ctx context.Context, accountID string
 			span.RecordError(err)
 			return false, fmt.Errorf("could not verify account")
 		}
+	} else {
+		accessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
+		secretAccessKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
+		actualAccountId, err := r.AWSMiddleware.GetAccountID(accessKeyID, secretAccessKey)
+		if accountID != actualAccountId {
+			r.Logger.Logger(ctx).Error("[graph/VerifyAccountID] Provided account ID does not match with account ID linked with the access key/secret key pair.",
+				zap.String("Provided Account ID", accountID),
+				zap.String("Actual Account ID", actualAccountId),
+			)
+			span.RecordError(err)
+			return false, fmt.Errorf("Entered Account ID (%s) does not match with account ID of access key, secret key pair (%s)", accountID, actualAccountId)
+		}
 	}
 
 	// Create a new team
