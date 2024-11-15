@@ -108,3 +108,27 @@ func (a *AWSMiddleware) AssumeRole(ctx context.Context, props AssumeRoleProps) (
 		SessionToken:    *result.Credentials.SessionToken,
 	}, nil
 }
+
+// GetAccountID retrieves the AWS account ID for the given access key and secret key
+func (a *AWSMiddleware) GetAccountID(accessKey, secretKey string) (string, error) {
+	// Create a new AWS session with provided credentials
+	sess, err := session.NewSession(&aws.Config{
+		Credentials: credentials.NewStaticCredentials(accessKey, secretKey, ""),
+		Region:      aws.String("us-west-2"), // Region is required, but it doesn’t matter for STS calls
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to create session, %w", err)
+	}
+
+	// Create an STS client
+	svc := sts.New(sess)
+
+	// Call GetCallerIdentity to get account information
+	result, err := svc.GetCallerIdentity(&sts.GetCallerIdentityInput{})
+	if err != nil {
+		return "", fmt.Errorf("failed to get caller identity, %w", err)
+	}
+
+	// Return the Account ID
+	return *result.Account, nil
+}
