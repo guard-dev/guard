@@ -34,11 +34,12 @@ func Connect(ctx context.Context, args DatabaseConnectProps) *Database {
 	connectRetries := 5
 	var conn *sql.DB
 	var err error
+	var connStr string
 
 	logger := args.Logger.Logger(ctx)
 
 	for connectRetries > 0 {
-		conn, err = getConnection(ctx)
+		conn, err, connStr = getConnection(ctx)
 		if err == nil {
 			logger.Info("[Postgres] Database client started")
 			break
@@ -49,7 +50,8 @@ func Connect(ctx context.Context, args DatabaseConnectProps) *Database {
 			"[Postgres] Could not connect to Postgres. Retrying after sleeping.",
 			zap.Error(err),
 			zap.Int("Retries Left", connectRetries),
-			zap.Int("Sleep Time", sleepTime))
+			zap.Int("Sleep Time", sleepTime),
+			zap.String("Connection String", connStr))
 		time.Sleep(time.Second * time.Duration(sleepTime))
 	}
 
@@ -63,7 +65,7 @@ func Connect(ctx context.Context, args DatabaseConnectProps) *Database {
 	return &Database{Queries: *queries, logger: args.Logger}
 }
 
-func getConnection(ctx context.Context) (*sql.DB, error) {
+func getConnection(ctx context.Context) (*sql.DB, error, string) {
 	tracer := otel.Tracer("postgres/getConnection")
 	_, span := tracer.Start(ctx, "getConnection")
 	defer span.End()
@@ -84,15 +86,15 @@ func getConnection(ctx context.Context) (*sql.DB, error) {
 	db, err := sql.Open("postgres", postgresqlDbInfo)
 	if err != nil {
 		span.RecordError(err)
-		return nil, err
+		return nil, err, postgresqlDbInfo
 	}
 	err = db.Ping()
 	if err != nil {
 		span.RecordError(err)
-		return nil, err
+		return nil, err, postgresqlDbInfo
 	}
 
-	return db, nil
+	return db, nil, ""
 }
 
 type SetupNewUserProps struct {

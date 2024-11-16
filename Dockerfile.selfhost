@@ -1,0 +1,62 @@
+# Build the frontend
+FROM node:18 AS frontend-builder
+
+ENV NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/graph
+ENV NEXT_PUBLIC_SELF_HOSTING=true
+ENV NEXT_WEBPACK_USEPOLLING=true
+
+WORKDIR /frontend
+COPY frontend/ .
+RUN npm ci --loglevel verbose
+RUN npm run build --loglevel verbose
+
+# Build the backend
+FROM golang:1.23 AS backend-builder
+
+WORKDIR /backend
+COPY backend/ .
+RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux go build -o /guard-gql-server server.go
+
+# Final runtime image
+FROM postgres:17 AS postgres-base
+
+# Install additional dependencies
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  python3 \
+  python3-pip \
+  supervisor \
+  curl \
+  gnupg
+
+# Install Node.js and npm explicitly
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+  apt-get install -y nodejs
+
+# Copy PostgreSQL environment configuration
+ENV POSTGRES_DB=postgres
+ENV POSTGRES_USER=postgres
+ENV POSTGRES_PASSWORD=postgrespw
+ENV SELF_HOSTING=1
+ENV POSTGRES_DB_NAME=postgres
+ENV POSTGRES_DB_USER=postgres
+ENV POSTGRES_DB_PASS=postgrespw
+ENV POSTGRES_DB_HOST=127.0.0.1
+ENV POSTGRES_DB_PORT=5432
+
+# Copy frontend and backend artifacts
+WORKDIR /app
+COPY --from=frontend-builder /frontend /app/frontend
+COPY --from=backend-builder /backend /app/backend
+COPY --from=backend-builder /guard-gql-server /app/backend/
+COPY --from=backend-builder backend/database/postgres/schema.sql /docker-entrypoint-initdb.d/schema.sql
+
+# Copy the startup script and Supervisor configuration
+COPY run_services.sh /app/run_services.sh
+RUN chmod +x /app/run_services.sh
+COPY supervisord.conf /etc/supervisor/supervisord.conf
+
+EXPOSE 80 8080 5432 3000
+
+# Start Supervisor to manage all services
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
