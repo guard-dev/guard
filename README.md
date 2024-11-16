@@ -12,6 +12,26 @@ Guard.dev is an open-source, AI-powered cloud security tool designed to scan and
 
 ## Installation
 
+### Prebuilt Docker Image
+
+1. **Pull and Run the Docker Image**:
+
+   ```bash
+   docker run -d \
+       -p 3000:3000 \
+       -p 8080:8080 \
+       -e GEMINI_SECRET_KEY=your_gemini_secret_key \
+       -e AWS_REGION=us-west-2 \
+       -e AWS_ACCESS_KEY_ID=your_aws_access_key_id \
+       -e AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key \
+       ghcr.io/guard-dev/guard:latest
+   ```
+
+2. **Access Guard.dev**:
+   Open your browser and navigate to `http://localhost:3000`.
+
+### Build From Source
+
 1. **Clone the Repository**:
 
    ```bash
@@ -36,9 +56,9 @@ Guard.dev is an open-source, AI-powered cloud security tool designed to scan and
 4. **Access Guard.dev**:
    Open your browser and navigate to `http://localhost:3000`.
 
-## Self-Hosting Setup
+## Environment Variable Setup
 
-To set up Guard.dev for use, you will need to configure several external services:
+To set up Guard.dev for use, you will need to configure the following services:
 
 ### 1. AWS Account Linking
 
@@ -54,7 +74,6 @@ For self-hosting Guard.dev, follow these steps to set up an IAM User with the re
    - Set the following environment variables in your hosting environment:
      - `AWS_ACCESS_KEY_ID`
      - `AWS_SECRET_ACCESS_KEY`
-     - `SELF_HOSTING=true`
 
 This IAM User will have the necessary permissions for Guard to perform cloud security scans across your AWS resources.
 
