@@ -121,5 +121,3 @@ Guard.dev is released under the [Server Side Public License (SSPL)](LICENSE). Th
 
 - **Website**: [www.guard.dev](https://www.guard.dev)
 - **Support**: <support@guard.dev>
-- **Twitter**: [@GuardDevSec](https://twitter.com/GuardDevSec)
-- **LinkedIn**: [Guard.dev](https://linkedin.com/company/guarddev)
