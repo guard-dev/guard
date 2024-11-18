@@ -4,20 +4,13 @@
     {
       "Effect": "Allow",
       "Action": [
-        "account:Get*",
-        "cloudtrail:GetInsightSelectors",
-        "ec2:Describe*",
-        "ecr:Describe*",
-        "glue:GetConnections",
-        "glue:GetSecurityConfiguration*",
-        "lambda:GetFunction*",
-        "logs:FilterLogEvents",
-        "macie2:GetMacieSession",
-        "s3:GetAccountPublicAccessBlock",
-        "securityhub:GetFindings",
-        "ssm:GetDocument",
-        "ssm-incidents:List*",
-        "tag:GetTagKeys",
+        "account:Get*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
         "apigateway:GET"
       ],
       "Resource": "*"
@@ -25,8 +18,141 @@
     {
       "Effect": "Allow",
       "Action": [
-        "iam:Get*",
-        "iam:List*"
+        "cloudtrail:GetInsightSelectors"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:ListTables",
+        "dynamodb:DescribeTable",
+        "dynamodb:DescribeContinuousBackups",
+        "dynamodb:DescribeTimeToLive"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeInstances",
+        "ec2:DescribeVolumes",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeAddresses",
+        "ec2:DescribeInstanceAttribute",
+        "ec2:DescribeVolumesModifications",
+        "ec2:DescribeInstanceStatus"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:Describe*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecs:ListClusters",
+        "ecs:DescribeTaskDefinition",
+        "ecs:ListTaskDefinitions",
+        "ecs:DescribeTasks",
+        "ecs:DescribeContainerInstances",
+        "ecs:ListServices",
+        "ecs:DescribeServices"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "glue:GetConnections",
+        "glue:GetSecurityConfiguration*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetRole",
+        "iam:List*",
+        "iam:GetPolicy",
+        "iam:GetPolicyVersion",
+        "iam:GetAccountSummary",
+        "iam:GetAccessKeyLastUsed",
+        "iam:GetLoginProfile",
+        "iam:ListAttachedUserPolicies",
+        "iam:ListUserPolicies",
+        "iam:ListMFADevices",
+        "iam:ListAccessKeys"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "lambda:ListFunctions",
+        "lambda:GetFunction",
+        "lambda:GetFunction*",
+        "lambda:GetFunctionConfiguration",
+        "lambda:GetPolicy",
+        "lambda:GetLayerVersion",
+        "lambda:ListTags"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:FilterLogEvents",
+        "logs:DescribeLogGroups"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "macie2:GetMacieSession"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListAllMyBuckets",
+        "s3:GetBucketPolicyStatus",
+        "s3:GetBucketAcl",
+        "s3:GetBucketPolicy",
+        "s3:GetBucketVersioning",
+        "s3:GetBucketLogging",
+        "s3:GetBucketEncryption",
+        "s3:GetPublicAccessBlock",
+        "s3:GetBucketLifecycleConfiguration",
+        "s3:GetAccountPublicAccessBlock"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "securityhub:GetFindings"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetDocument",
+        "ssm-incidents:List*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "tag:GetTagKeys"
       ],
       "Resource": "*"
     }
