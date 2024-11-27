@@ -87,17 +87,11 @@ Resources:
                   - 'iam:GetAccountSummary'
                   - 'iam:GetAccessKeyLastUsed'
                   - 'iam:GetLoginProfile'
-                  - 'iam:ListAttachedUserPolicies'
-                  - 'iam:ListUserPolicies'
-                  - 'iam:ListMFADevices'
-                  - 'iam:ListAccessKeys'
                 Resource: "*"
               - Effect: Allow
                 Action:
                   - 'lambda:ListFunctions'
-                  - 'lambda:GetFunction'
                   - 'lambda:GetFunction*'
-                  - 'lambda:GetFunctionConfiguration'
                   - 'lambda:GetPolicy'
                   - 'lambda:GetLayerVersion'
                   - 'lambda:ListTags'
@@ -114,14 +108,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - 's3:ListAllMyBuckets'
-                  - 's3:GetBucketPolicyStatus'
-                  - 's3:GetBucketAcl'
-                  - 's3:GetBucketPolicy'
-                  - 's3:GetBucketVersioning'
-                  - 's3:GetBucketLogging'
-                  - 's3:GetBucketEncryption'
-                  - 's3:GetPublicAccessBlock'
-                  - 's3:GetBucketLifecycleConfiguration'
+                  - 's3:GetBucket*'
                   - 's3:GetAccountPublicAccessBlock'
                 Resource: "*"
               - Effect: Allow
