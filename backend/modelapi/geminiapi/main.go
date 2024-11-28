@@ -61,7 +61,7 @@ func Connect(ctx context.Context, args GeminiConnectProps) *Gemini {
 	return &Gemini{logger: args.Logger, client: client}
 }
 
-func (g *Gemini) SummarizeFindings(ctx context.Context, service string, region string, findings []string) (*types.SummarizeFindings, error) {
+func (g *Gemini) SummarizeFindings(ctx context.Context, service string, region string, accountId string, findings []string) (*types.SummarizeFindings, error) {
 	tracer := otel.Tracer("geminiapi/SummarizeIssues")
 	ctx, span := tracer.Start(ctx, "SummarizeIssues")
 	defer span.End()
@@ -69,14 +69,14 @@ func (g *Gemini) SummarizeFindings(ctx context.Context, service string, region s
 	log := g.logger.Logger(ctx)
 
 	// First LLM call: Summarize findings
-	summary, remedies, err := g.summarizeIssues(ctx, service, region, findings)
+	summary, remedies, err := g.summarizeIssues(ctx, service, region, accountId, findings)
 	if err != nil {
 		log.Error("Error summarizing issues", zap.Error(err))
 		return nil, err
 	}
 
 	// Second LLM call: Generate commands
-	commands, err := g.generateCommands(ctx, service, region, summary, remedies)
+	commands, err := g.generateCommands(ctx, service, region, accountId, summary, remedies)
 	if err != nil {
 		log.Error("Error generating commands", zap.Error(err))
 		return nil, err
@@ -92,7 +92,7 @@ func (g *Gemini) SummarizeFindings(ctx context.Context, service string, region s
 	return result, nil
 }
 
-func (g *Gemini) summarizeIssues(ctx context.Context, service, region string, findings []string) (string, string, error) {
+func (g *Gemini) summarizeIssues(ctx context.Context, service, region, accountId string, findings []string) (string, string, error) {
 	tracer := otel.Tracer("geminiapi/summarizeIssues")
 	ctx, span := tracer.Start(ctx, "summarizeIssues")
 	defer span.End()
@@ -100,14 +100,15 @@ func (g *Gemini) summarizeIssues(ctx context.Context, service, region string, fi
 	span.SetAttributes(
 		attribute.String("service", service),
 		attribute.String("region", region),
+		attribute.String("accountId", accountId),
 		attribute.Int("findingsCount", len(findings)),
 	)
 
 	systemPrompt := fmt.Sprintf(`
 		You are a cloud auditing expert. You will be analyzing some findings from AWS resources.
-		Here are some findings from service %s from region %s. Some findings might be just noise,
+		Here are some findings from service %s from region %s in AWS account %s. Some findings might be just noise,
 		just simply ignore those.
-	`, service, region)
+	`, service, region, accountId)
 
 	maxItems := 50
 	if len(findings) < maxItems {
@@ -115,7 +116,7 @@ func (g *Gemini) summarizeIssues(ctx context.Context, service, region string, fi
 	}
 
 	userPrompt := fmt.Sprintf(`
-		Analyze and summarize these findings from %s in region %s:
+		Analyze and summarize these findings from %s in region %s for AWS account %s:
 		<Findings Start>
 		%s
 		<Findings End>
@@ -123,7 +124,7 @@ func (g *Gemini) summarizeIssues(ctx context.Context, service, region string, fi
 		Provide:
 		1. A brief summary of the problems found.
 		2. A general description of the remedies to address the issues.
-	`, service, region, strings.Join(findings[:maxItems], "\n"))
+	`, service, region, accountId, strings.Join(findings[:maxItems], "\n"))
 
 	summarizeIssuesFunc := GetSummarizeIssuesFunction()
 
@@ -166,7 +167,7 @@ func (g *Gemini) summarizeIssues(ctx context.Context, service, region string, fi
 	return result.Summary, result.Remedies, nil
 }
 
-func (g *Gemini) generateCommands(ctx context.Context, service, region, summary, remedies string) ([]string, error) {
+func (g *Gemini) generateCommands(ctx context.Context, service, region, accountId, summary, remedies string) ([]string, error) {
 	tracer := otel.Tracer("geminiapi/generateCommands")
 	ctx, span := tracer.Start(ctx, "generateCommands")
 	defer span.End()
@@ -174,12 +175,13 @@ func (g *Gemini) generateCommands(ctx context.Context, service, region, summary,
 	span.SetAttributes(
 		attribute.String("service", service),
 		attribute.String("region", region),
+		attribute.String("accountId", accountId),
 	)
 
 	systemPrompt := fmt.Sprintf(`
 		You are a cloud automation expert. You will be generating AWS CLI commands to address issues in AWS resources.
-		The commands will be for service %s in region %s.
-	`, service, region)
+		The commands will be for service %s in region %s for AWS account %s.
+	`, service, region, accountId)
 
 	userPrompt := fmt.Sprintf(`
 		Based on the following summary and remedies, generate AWS CLI commands to address the issues:
@@ -191,8 +193,8 @@ func (g *Gemini) generateCommands(ctx context.Context, service, region, summary,
 		%s
 
 		Provide a list of AWS CLI command(s) which can be used to remediate the issues programmatically.
-		Make sure that the commands are effective and do the job.
-	`, summary, remedies)
+		Make sure that the commands are effective and do the job. The commands will be executed in AWS account %s.
+	`, summary, remedies, accountId)
 
 	generateCommandsFunc := GetGenerateCommandsFunction()
 

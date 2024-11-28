@@ -16,13 +16,14 @@ import (
 )
 
 type S3Scanner struct {
-	s3Client *s3.S3
-	logger   *logger.LogMiddleware
-	Gemini   *geminiapi.Gemini
+	s3Client  *s3.S3
+	logger    *logger.LogMiddleware
+	Gemini    *geminiapi.Gemini
+	accountId string
 }
 
 // Initialize an S3 scanner with assumed credentials
-func NewS3Scanner(accessKey, secretKey, sessionToken, region string, logger *logger.LogMiddleware, gemini *geminiapi.Gemini) *S3Scanner {
+func NewS3Scanner(accessKey, secretKey, sessionToken, region string, accountId string, logger *logger.LogMiddleware, gemini *geminiapi.Gemini) *S3Scanner {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(region),
 		Credentials: credentials.NewStaticCredentials(
@@ -32,9 +33,10 @@ func NewS3Scanner(accessKey, secretKey, sessionToken, region string, logger *log
 		),
 	}))
 	return &S3Scanner{
-		s3Client: s3.New(sess),
-		logger:   logger,
-		Gemini:   gemini,
+		s3Client:  s3.New(sess),
+		logger:    logger,
+		Gemini:    gemini,
+		accountId: accountId,
 	}
 }
 

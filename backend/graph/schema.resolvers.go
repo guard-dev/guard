@@ -247,10 +247,24 @@ func (r *mutationResolver) StartScan(ctx context.Context, teamSlug string, proje
 		for _, reg := range regions {
 			for _, ser := range services {
 
-				scanRes, err := r.AWSMiddleware.StartScan(newCtx, accessKeyID, secretAccessKey, sessionToken, []string{reg}, []string{ser})
+				// Get account ID using GetAccountId function
+				accountId, err := r.AWSMiddleware.GetAccountID(accessKeyID, secretAccessKey)
 				if err != nil {
 					r.Logger.Logger(newCtx).Error(
-						"[graph/StartScan] Could not scan service",
+						"[graph/StartScan] Could not get account ID",
+						zap.Error(err),
+						zap.String("teamSlug", teamSlug),
+						zap.String("projectSlug", projectSlug),
+						zap.String("region", reg),
+						zap.String("service", ser),
+					)
+					continue
+				}
+
+				scanRes, err := r.AWSMiddleware.StartScan(newCtx, accessKeyID, secretAccessKey, sessionToken, []string{reg}, []string{ser}, accountId)
+				if err != nil {
+					r.Logger.Logger(newCtx).Error(
+						"[graph/StartScan] Could not start scan",
 						zap.Error(err),
 						zap.String("teamSlug", teamSlug),
 						zap.String("projectSlug", projectSlug),
@@ -264,7 +278,7 @@ func (r *mutationResolver) StartScan(ctx context.Context, teamSlug string, proje
 				findings := scanRes[0].ScanItem.Findings
 
 				// summarize with gemini
-				summ, err := r.Gemini.SummarizeFindings(newCtx, ser, reg, findings)
+				summ, err := r.Gemini.SummarizeFindings(newCtx, ser, reg, accountId, findings)
 				if err != nil {
 					r.Logger.Logger(newCtx).Error(
 						"[graph/StartScan] Could not summarize findings",

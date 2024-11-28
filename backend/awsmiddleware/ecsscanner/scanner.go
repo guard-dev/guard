@@ -88,6 +88,7 @@ func (scanner *ECSScanner) ScanECS(ctx context.Context, region string) ([]string
 		ctx,
 		"ecs",
 		region,
+		scanner.accountId,
 		iamRoleFindings,
 		networkModeFindings,
 		loggingConfigFindings,
@@ -113,6 +114,7 @@ func (scanner *ECSScanner) ProcessAndSummarizeFindings(
 	ctx context.Context,
 	service string,
 	region string,
+	accountId string,
 	iamRoles []string,
 	networkModes []string,
 	loggingConfigs []string,
@@ -127,7 +129,7 @@ func (scanner *ECSScanner) ProcessAndSummarizeFindings(
 
 	// Define prompts for each type of finding and call the LLM
 	if len(iamRoles) > 0 {
-		iamRoleSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, iamRoles)
+		iamRoleSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, iamRoles)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing IAM roles: %v", err)
@@ -143,7 +145,7 @@ func (scanner *ECSScanner) ProcessAndSummarizeFindings(
 	}
 
 	if len(networkModes) > 0 {
-		networkModeSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, networkModes)
+		networkModeSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, networkModes)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing network modes: %v", err)
@@ -159,7 +161,7 @@ func (scanner *ECSScanner) ProcessAndSummarizeFindings(
 	}
 
 	if len(loggingConfigs) > 0 {
-		loggingSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, loggingConfigs)
+		loggingSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, loggingConfigs)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing logging configuration: %v", err)
@@ -175,7 +177,7 @@ func (scanner *ECSScanner) ProcessAndSummarizeFindings(
 	}
 
 	if len(sensitiveEnvVars) > 0 {
-		sensitiveEnvSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, sensitiveEnvVars)
+		sensitiveEnvSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, sensitiveEnvVars)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing sensitive environment variables: %v", err)
@@ -191,7 +193,7 @@ func (scanner *ECSScanner) ProcessAndSummarizeFindings(
 	}
 
 	if len(resourceLimits) > 0 {
-		resourceLimitsSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, resourceLimits)
+		resourceLimitsSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, resourceLimits)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing resource limits: %v", err)

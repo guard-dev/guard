@@ -68,6 +68,7 @@ func (scanner *LambdaScanner) ScanLambda(ctx context.Context, region string) ([]
 		ctx,
 		"lambda",
 		region,
+		scanner.accountId,
 		iamRoleFindings,
 		envVariableFindings,
 		cloudWatchLogFindings,
@@ -95,6 +96,7 @@ func (scanner *LambdaScanner) processAndSummarizeFindings(
 	ctx context.Context,
 	service string,
 	region string,
+	accountId string,
 	iamRoleFindings []string,
 	envVariableFindings []string,
 	cloudWatchLogFindings []string,
@@ -109,7 +111,7 @@ func (scanner *LambdaScanner) processAndSummarizeFindings(
 
 	// Summarize IAM Role findings
 	if len(iamRoleFindings) > 0 {
-		iamRoleSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, iamRoleFindings)
+		iamRoleSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, iamRoleFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing IAM role findings: %v", err)
@@ -126,7 +128,7 @@ func (scanner *LambdaScanner) processAndSummarizeFindings(
 
 	// Summarize Environment Variable findings
 	if len(envVariableFindings) > 0 {
-		envVarSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, envVariableFindings)
+		envVarSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, envVariableFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing environment variable findings: %v", err)
@@ -143,7 +145,7 @@ func (scanner *LambdaScanner) processAndSummarizeFindings(
 
 	// Summarize CloudWatch Log findings
 	if len(cloudWatchLogFindings) > 0 {
-		cloudWatchSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, cloudWatchLogFindings)
+		cloudWatchSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, cloudWatchLogFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing CloudWatch log findings: %v", err)
@@ -160,7 +162,7 @@ func (scanner *LambdaScanner) processAndSummarizeFindings(
 
 	// Summarize Timeout Configuration findings
 	if len(timeoutFindings) > 0 {
-		timeoutSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, timeoutFindings)
+		timeoutSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, timeoutFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing timeout configuration findings: %v", err)
@@ -177,7 +179,7 @@ func (scanner *LambdaScanner) processAndSummarizeFindings(
 
 	// Summarize VPC Configuration findings
 	if len(vpcFindings) > 0 {
-		vpcSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, vpcFindings)
+		vpcSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, vpcFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing VPC configuration findings: %v", err)

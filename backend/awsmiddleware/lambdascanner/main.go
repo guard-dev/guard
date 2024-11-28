@@ -24,19 +24,25 @@ type LambdaScanner struct {
 	iamClient    *iam.IAM
 	logger       *logger.LogMiddleware
 	Gemini       *geminiapi.Gemini
+	accountId    string
 }
 
 // Initialize a Lambda scanner with assumed credentials
-func NewLambdaScanner(accessKey, secretKey, sessionToken, region string, logger *logger.LogMiddleware, gemini *geminiapi.Gemini) *LambdaScanner {
+func NewLambdaScanner(accessKey, secretKey, sessionToken, region string, accountId string, logger *logger.LogMiddleware, gemini *geminiapi.Gemini) *LambdaScanner {
 	sess := session.Must(session.NewSession(&aws.Config{
-		Region:      aws.String(region),
-		Credentials: credentials.NewStaticCredentials(accessKey, secretKey, sessionToken),
+		Region: aws.String(region),
+		Credentials: credentials.NewStaticCredentials(
+			accessKey,
+			secretKey,
+			sessionToken,
+		),
 	}))
 	return &LambdaScanner{
 		lambdaClient: lambda.New(sess),
 		iamClient:    iam.New(sess),
 		logger:       logger,
 		Gemini:       gemini,
+		accountId:    accountId,
 	}
 }
 
