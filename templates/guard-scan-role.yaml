@@ -108,8 +108,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - 's3:ListAllMyBuckets'
-                  - 's3:GetBucket*'
-                  - 's3:GetAccountPublicAccessBlock'
+                  - 's3:Get*'
                 Resource: "*"
               - Effect: Allow
                 Action:
