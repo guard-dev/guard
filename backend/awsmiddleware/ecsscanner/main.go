@@ -22,19 +22,25 @@ type ECSScanner struct {
 	iamClient *iam.IAM
 	logger    *logger.LogMiddleware
 	Gemini    *geminiapi.Gemini
+	accountId string
 }
 
 // Initialize an ECS scanner with assumed credentials
-func NewECSScanner(accessKey, secretKey, sessionToken, region string, logger *logger.LogMiddleware, gemini *geminiapi.Gemini) *ECSScanner {
+func NewECSScanner(accessKey, secretKey, sessionToken, region string, accountId string, logger *logger.LogMiddleware, gemini *geminiapi.Gemini) *ECSScanner {
 	sess := session.Must(session.NewSession(&aws.Config{
-		Region:      aws.String(region),
-		Credentials: credentials.NewStaticCredentials(accessKey, secretKey, sessionToken),
+		Region: aws.String(region),
+		Credentials: credentials.NewStaticCredentials(
+			accessKey,
+			secretKey,
+			sessionToken,
+		),
 	}))
 	return &ECSScanner{
 		ECSClient: ecs.New(sess),
 		iamClient: iam.New(sess),
 		logger:    logger,
 		Gemini:    gemini,
+		accountId: accountId,
 	}
 }
 

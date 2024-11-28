@@ -22,7 +22,7 @@ type ScanResults struct {
 	ScanItemEntries []postgres.CreateNewScanItemEntryParams
 }
 
-func (a *AWSMiddleware) StartScan(ctx context.Context, accessKey, secretKey, sessionToken string, regions, services []string) ([]ScanResults, error) {
+func (a *AWSMiddleware) StartScan(ctx context.Context, accessKey, secretKey, sessionToken string, regions, services []string, accountId string) ([]ScanResults, error) {
 	tracer := otel.Tracer("awsmiddleware/StartScan")
 	ctx, span := tracer.Start(ctx, "StartScan")
 	defer span.End()
@@ -30,6 +30,7 @@ func (a *AWSMiddleware) StartScan(ctx context.Context, accessKey, secretKey, ses
 	span.SetAttributes(
 		attribute.StringSlice("aws.regions", regions),
 		attribute.StringSlice("aws.services", services),
+		attribute.String("aws.account_id", accountId),
 	)
 
 	var results []ScanResults
@@ -39,7 +40,7 @@ func (a *AWSMiddleware) StartScan(ctx context.Context, accessKey, secretKey, ses
 	for _, region := range regions {
 		for _, service := range services {
 			logger.Info("[AWSMiddleware/StartScan] Scanning Service", zap.String("Service", service), zap.String("Region", region))
-			result, scanItems, err := a.scanService(ctx, accessKey, secretKey, sessionToken, region, service)
+			result, scanItems, err := a.scanService(ctx, accessKey, secretKey, sessionToken, region, service, accountId)
 			if err != nil {
 				span.RecordError(err)
 				return nil, fmt.Errorf("error scanning %s in %s: %v", service, region, err)
@@ -54,7 +55,7 @@ func (a *AWSMiddleware) StartScan(ctx context.Context, accessKey, secretKey, ses
 	return results, nil
 }
 
-func (a *AWSMiddleware) scanService(ctx context.Context, accessKey, secretKey, sessionToken, region, service string) (postgres.ScanItem, []postgres.CreateNewScanItemEntryParams, error) {
+func (a *AWSMiddleware) scanService(ctx context.Context, accessKey, secretKey, sessionToken, region, service, accountId string) (postgres.ScanItem, []postgres.CreateNewScanItemEntryParams, error) {
 	tracer := otel.Tracer("awsmiddleware/scanService")
 	ctx, span := tracer.Start(ctx, "scanService")
 	defer span.End()
@@ -62,6 +63,7 @@ func (a *AWSMiddleware) scanService(ctx context.Context, accessKey, secretKey, s
 	span.SetAttributes(
 		attribute.String("aws.region", region),
 		attribute.String("aws.service", service),
+		attribute.String("aws.account_id", accountId),
 	)
 
 	result := postgres.ScanItem{
@@ -76,22 +78,22 @@ func (a *AWSMiddleware) scanService(ctx context.Context, accessKey, secretKey, s
 
 	switch service {
 	case "s3":
-		scanner := s3scanner.NewS3Scanner(accessKey, secretKey, sessionToken, region, a.logger, a.gemini)
+		scanner := s3scanner.NewS3Scanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.gemini)
 		findings, scanItemEntries, err = scanner.ScanS3(ctx, region)
 	case "ec2":
-		scanner := ec2scanner.NewEC2Scanner(accessKey, secretKey, sessionToken, region, a.logger, a.gemini)
+		scanner := ec2scanner.NewEC2Scanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.gemini)
 		findings, scanItemEntries, err = scanner.ScanEC2(ctx, region)
 	case "ecs":
-		scanner := ecsscanner.NewECSScanner(accessKey, secretKey, sessionToken, region, a.logger, a.gemini)
+		scanner := ecsscanner.NewECSScanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.gemini)
 		findings, scanItemEntries, err = scanner.ScanECS(ctx, region)
 	case "lambda":
-		scanner := lambdascanner.NewLambdaScanner(accessKey, secretKey, sessionToken, region, a.logger, a.gemini)
+		scanner := lambdascanner.NewLambdaScanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.gemini)
 		findings, scanItemEntries, err = scanner.ScanLambda(ctx, region)
 	case "dynamodb":
-		scanner := dynamodbscanner.NewDynamoDBScanner(accessKey, secretKey, sessionToken, region, a.logger, a.gemini)
+		scanner := dynamodbscanner.NewDynamoDBScanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.gemini)
 		findings, scanItemEntries, err = scanner.ScanDynamoDB(ctx, region)
 	case "iam":
-		scanner := iamscanner.NewIAMScanner(accessKey, secretKey, sessionToken, region, a.logger, a.gemini)
+		scanner := iamscanner.NewIAMScanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.gemini)
 		findings, scanItemEntries, err = scanner.ScanIAM(ctx, region)
 	default:
 		err = fmt.Errorf("unsupported service: %s", service)

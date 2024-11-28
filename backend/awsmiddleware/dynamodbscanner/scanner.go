@@ -110,7 +110,7 @@ func (scanner *DynamoDBScanner) processAndSummarizeDynamoDBFindings(
 	scanItems := []postgres.CreateNewScanItemEntryParams{}
 
 	if len(encryptionFindings) > 0 {
-		encryptionSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, encryptionFindings)
+		encryptionSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, scanner.accountId, encryptionFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing encryption findings: %v", err)
@@ -126,7 +126,7 @@ func (scanner *DynamoDBScanner) processAndSummarizeDynamoDBFindings(
 	}
 
 	if len(pitrFindings) > 0 {
-		pitrSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, pitrFindings)
+		pitrSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, scanner.accountId, pitrFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing PITR findings: %v", err)
@@ -142,7 +142,7 @@ func (scanner *DynamoDBScanner) processAndSummarizeDynamoDBFindings(
 	}
 
 	if len(autoScalingFindings) > 0 {
-		autoScalingSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, autoScalingFindings)
+		autoScalingSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, scanner.accountId, autoScalingFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing auto scaling findings: %v", err)
@@ -158,7 +158,7 @@ func (scanner *DynamoDBScanner) processAndSummarizeDynamoDBFindings(
 	}
 
 	if len(ttlFindings) > 0 {
-		ttlSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, ttlFindings)
+		ttlSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, scanner.accountId, ttlFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing TTL findings: %v", err)
@@ -174,7 +174,7 @@ func (scanner *DynamoDBScanner) processAndSummarizeDynamoDBFindings(
 	}
 
 	if len(unusedIndexesFindings) > 0 {
-		unusedIndexesSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, unusedIndexesFindings)
+		unusedIndexesSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, scanner.accountId, unusedIndexesFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing unused indexes findings: %v", err)

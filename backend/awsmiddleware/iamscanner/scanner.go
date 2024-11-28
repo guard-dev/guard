@@ -74,6 +74,7 @@ func (scanner *IAMScanner) ScanIAM(ctx context.Context, region string) ([]string
 		ctx,
 		"iam",
 		region,
+		scanner.accountId,
 		unusedAccessKeysFindings,
 		overlyPermissivePoliciesFindings,
 		privilegeEscalationFindings,
@@ -102,6 +103,7 @@ func (scanner *IAMScanner) processAndSummarizeFindings(
 	ctx context.Context,
 	service string,
 	region string,
+	accountId string,
 	unusedKeys []string,
 	overlyPermissivePolicies []string,
 	privilegeEscalation []string,
@@ -117,7 +119,7 @@ func (scanner *IAMScanner) processAndSummarizeFindings(
 
 	// Define prompts for each type of finding and call the LLM
 	if len(unusedKeys) > 0 {
-		unusedKeysSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, unusedKeys)
+		unusedKeysSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, unusedKeys)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing unused keys: %v", err)
@@ -133,7 +135,7 @@ func (scanner *IAMScanner) processAndSummarizeFindings(
 	}
 
 	if len(overlyPermissivePolicies) > 0 {
-		permissivePoliciesSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, overlyPermissivePolicies)
+		permissivePoliciesSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, overlyPermissivePolicies)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing overly permissive policies: %v", err)
@@ -149,7 +151,7 @@ func (scanner *IAMScanner) processAndSummarizeFindings(
 	}
 
 	if len(privilegeEscalation) > 0 {
-		privilegeEscalationSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, privilegeEscalation)
+		privilegeEscalationSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, privilegeEscalation)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing privilege escalation risks: %v", err)
@@ -165,7 +167,7 @@ func (scanner *IAMScanner) processAndSummarizeFindings(
 	}
 
 	if len(mfaStatus) > 0 {
-		mfaSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, mfaStatus)
+		mfaSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, mfaStatus)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing MFA status: %v", err)
@@ -181,7 +183,7 @@ func (scanner *IAMScanner) processAndSummarizeFindings(
 	}
 
 	if len(roleTrustPolicies) > 0 {
-		roleTrustSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, roleTrustPolicies)
+		roleTrustSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, roleTrustPolicies)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing role trust policies: %v", err)
@@ -198,7 +200,7 @@ func (scanner *IAMScanner) processAndSummarizeFindings(
 
 	// Root account findings
 	if len(rootAccountFindings) > 0 {
-		rootAccountSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, rootAccountFindings)
+		rootAccountSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, rootAccountFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing root account findings: %v", err)

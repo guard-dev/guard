@@ -20,10 +20,11 @@ type EC2Scanner struct {
 	ec2Client *ec2.EC2
 	logger    *logger.LogMiddleware
 	Gemini    *geminiapi.Gemini
+	accountId string
 }
 
 // Initialize an EC2 scanner with assumed credentials
-func NewEC2Scanner(accessKey, secretKey, sessionToken, region string, logger *logger.LogMiddleware, gemini *geminiapi.Gemini) *EC2Scanner {
+func NewEC2Scanner(accessKey, secretKey, sessionToken, region string, accountId string, logger *logger.LogMiddleware, gemini *geminiapi.Gemini) *EC2Scanner {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(region),
 		Credentials: credentials.NewStaticCredentials(
@@ -36,6 +37,7 @@ func NewEC2Scanner(accessKey, secretKey, sessionToken, region string, logger *lo
 		ec2Client: ec2.New(sess),
 		logger:    logger,
 		Gemini:    gemini,
+		accountId: accountId,
 	}
 }
 

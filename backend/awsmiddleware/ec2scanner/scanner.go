@@ -68,6 +68,7 @@ func (scanner *EC2Scanner) ScanEC2(ctx context.Context, region string) ([]string
 		ctx,
 		region,
 		"ec2",
+		scanner.accountId,
 		publicIPFindings,
 		volumeEncryptionFindings,
 		securityGroupFindings,
@@ -97,6 +98,7 @@ func (scanner *EC2Scanner) processAndSummarizeFindings(
 	ctx context.Context,
 	service string,
 	region string,
+	accountId string,
 	publicIPFindings []string,
 	volumeEncryptionFindings []string,
 	securityGroupFindings []string,
@@ -112,7 +114,7 @@ func (scanner *EC2Scanner) processAndSummarizeFindings(
 	scanItems := []postgres.CreateNewScanItemEntryParams{}
 
 	if len(publicIPFindings) > 0 {
-		publicIPSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, publicIPFindings)
+		publicIPSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, publicIPFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing public IP findings: %v", err)
@@ -127,7 +129,7 @@ func (scanner *EC2Scanner) processAndSummarizeFindings(
 	}
 
 	if len(volumeEncryptionFindings) > 0 {
-		volumeEncryptionSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, volumeEncryptionFindings)
+		volumeEncryptionSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, volumeEncryptionFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing volume encryption findings: %v", err)
@@ -142,14 +144,14 @@ func (scanner *EC2Scanner) processAndSummarizeFindings(
 	}
 
 	if len(securityGroupFindings) > 0 {
-		securityGroupSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, securityGroupFindings)
+		securityGroupSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, securityGroupFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing security group findings: %v", err)
 		}
 		scanItems = append(scanItems, postgres.CreateNewScanItemEntryParams{
 			Findings: securityGroupFindings,
-			Title:    "Security Group Findings",
+			Title:    "Security Group Configuration",
 			Summary:  securityGroupSummary.Summary,
 			Remedy:   securityGroupSummary.Remedies,
 			Commands: securityGroupSummary.Commands,
@@ -157,7 +159,7 @@ func (scanner *EC2Scanner) processAndSummarizeFindings(
 	}
 
 	if len(iamRoleFindings) > 0 {
-		iamRoleSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, iamRoleFindings)
+		iamRoleSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, iamRoleFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing IAM role findings: %v", err)
@@ -172,7 +174,7 @@ func (scanner *EC2Scanner) processAndSummarizeFindings(
 	}
 
 	if len(cloudWatchMonitoringFindings) > 0 {
-		cloudWatchMonitoringSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, cloudWatchMonitoringFindings)
+		cloudWatchMonitoringSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, cloudWatchMonitoringFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing CloudWatch monitoring findings: %v", err)
@@ -187,7 +189,7 @@ func (scanner *EC2Scanner) processAndSummarizeFindings(
 	}
 
 	if len(metadataFindings) > 0 {
-		metadataSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, metadataFindings)
+		metadataSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, metadataFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing metadata findings: %v", err)
@@ -202,7 +204,7 @@ func (scanner *EC2Scanner) processAndSummarizeFindings(
 	}
 
 	if len(elasticIPFindings) > 0 {
-		elasticIPSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, elasticIPFindings)
+		elasticIPSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, elasticIPFindings)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing Elastic IP findings: %v", err)

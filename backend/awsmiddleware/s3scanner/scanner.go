@@ -16,6 +16,11 @@ func (scanner *S3Scanner) ScanS3(ctx context.Context, region string) ([]string, 
 	ctx, span := tracer.Start(ctx, "ScanS3")
 	defer span.End()
 
+	span.SetAttributes(
+		attribute.String("aws.region", region),
+		attribute.String("aws.account_id", scanner.accountId),
+	)
+
 	var allFindings []string
 
 	buckets, err := scanner.ListBuckets(ctx)
@@ -69,33 +74,33 @@ func (scanner *S3Scanner) ScanS3(ctx context.Context, region string) ([]string, 
 		// Block public access findings
 		_, blockPublicAccessFinding, err := scanner.CheckBlockPublicAccess(ctx, bucketName)
 		if err != nil {
-			blockPublicAccessFindings = append(blockPublicAccessFindings, fmt.Sprintf("Error checking block public access settings for bucket %s: %v", bucketName, err))
+			blockPublicAccessFindings = append(blockPublicAccessFindings, fmt.Sprintf("Error checking block public access for bucket %s: %v", bucketName, err))
 		} else {
 			blockPublicAccessFindings = append(blockPublicAccessFindings, blockPublicAccessFinding)
 		}
 
 		// Lifecycle policy findings
-		_, lifecycleFinding, err := scanner.IsLifecyclePolicyEnabled(ctx, bucketName)
+		_, lifecyclePolicyFinding, err := scanner.IsLifecyclePolicyEnabled(ctx, bucketName)
 		if err != nil {
 			lifecyclePolicyFindings = append(lifecyclePolicyFindings, fmt.Sprintf("Error checking lifecycle policy for bucket %s: %v", bucketName, err))
 		} else {
-			lifecyclePolicyFindings = append(lifecyclePolicyFindings, lifecycleFinding)
+			lifecyclePolicyFindings = append(lifecyclePolicyFindings, lifecyclePolicyFinding)
 		}
 
-		// MFA delete findings
+		// MFA Delete findings
 		_, mfaDeleteFinding, err := scanner.IsMFADeleteEnabled(ctx, bucketName)
 		if err != nil {
-			mfaDeleteFindings = append(mfaDeleteFindings, fmt.Sprintf("Error checking MFA delete for bucket %s: %v", bucketName, err))
+			mfaDeleteFindings = append(mfaDeleteFindings, fmt.Sprintf("Error checking MFA Delete for bucket %s: %v", bucketName, err))
 		} else {
 			mfaDeleteFindings = append(mfaDeleteFindings, mfaDeleteFinding)
 		}
 	}
 
-	// Process and summarize categorized findings using LLM
 	scanItems, err := scanner.processAndSummarizeS3Findings(
 		ctx,
 		"s3",
 		region,
+		scanner.accountId,
 		publicAccessFindings,
 		encryptionFindings,
 		versioningFindings,
@@ -127,6 +132,7 @@ func (scanner *S3Scanner) processAndSummarizeS3Findings(
 	ctx context.Context,
 	service string,
 	region string,
+	accountId string,
 	publicAccess []string,
 	encryption []string,
 	versioning []string,
@@ -139,11 +145,16 @@ func (scanner *S3Scanner) processAndSummarizeS3Findings(
 	ctx, span := tracer.Start(ctx, "processAndSummarizeS3Findings")
 	defer span.End()
 
-	scanItems := []postgres.CreateNewScanItemEntryParams{}
+	span.SetAttributes(
+		attribute.String("service", service),
+		attribute.String("region", region),
+		attribute.String("accountId", accountId),
+	)
 
-	// Define prompts for each type of finding and call the LLM
+	var scanItems []postgres.CreateNewScanItemEntryParams
+
 	if len(publicAccess) > 0 {
-		publicAccessSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, publicAccess)
+		publicAccessSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, publicAccess)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing public access findings: %v", err)
@@ -155,11 +166,11 @@ func (scanner *S3Scanner) processAndSummarizeS3Findings(
 			Remedy:   publicAccessSummary.Remedies,
 			Commands: publicAccessSummary.Commands,
 		})
-		scanner.logger.Logger(ctx).Info("Public Access Findings", zap.Any("Public Access", publicAccessSummary))
+		scanner.logger.Logger(ctx).Info("Public Access", zap.Any("Public Access Summary", publicAccessSummary))
 	}
 
 	if len(encryption) > 0 {
-		encryptionSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, encryption)
+		encryptionSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, encryption)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing encryption findings: %v", err)
@@ -171,11 +182,11 @@ func (scanner *S3Scanner) processAndSummarizeS3Findings(
 			Remedy:   encryptionSummary.Remedies,
 			Commands: encryptionSummary.Commands,
 		})
-		scanner.logger.Logger(ctx).Info("Encryption Findings", zap.Any("Encryption", encryptionSummary))
+		scanner.logger.Logger(ctx).Info("Encryption", zap.Any("Encryption Summary", encryptionSummary))
 	}
 
 	if len(versioning) > 0 {
-		versioningSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, versioning)
+		versioningSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, versioning)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing versioning findings: %v", err)
@@ -191,7 +202,7 @@ func (scanner *S3Scanner) processAndSummarizeS3Findings(
 	}
 
 	if len(logging) > 0 {
-		loggingSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, logging)
+		loggingSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, logging)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing logging findings: %v", err)
@@ -207,7 +218,7 @@ func (scanner *S3Scanner) processAndSummarizeS3Findings(
 	}
 
 	if len(blockPublicAccess) > 0 {
-		blockPublicAccessSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, blockPublicAccess)
+		blockPublicAccessSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, blockPublicAccess)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing block public access findings: %v", err)
@@ -223,7 +234,7 @@ func (scanner *S3Scanner) processAndSummarizeS3Findings(
 	}
 
 	if len(lifecyclePolicy) > 0 {
-		lifecyclePolicySummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, lifecyclePolicy)
+		lifecyclePolicySummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, lifecyclePolicy)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing lifecycle policy findings: %v", err)
@@ -239,7 +250,7 @@ func (scanner *S3Scanner) processAndSummarizeS3Findings(
 	}
 
 	if len(mfaDelete) > 0 {
-		mfaDeleteSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, mfaDelete)
+		mfaDeleteSummary, err := scanner.Gemini.SummarizeFindings(ctx, service, region, accountId, mfaDelete)
 		if err != nil {
 			span.RecordError(err)
 			return nil, fmt.Errorf("error summarizing MFA delete findings: %v", err)
