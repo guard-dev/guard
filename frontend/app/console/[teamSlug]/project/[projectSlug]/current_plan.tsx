@@ -72,9 +72,7 @@ export const ShowSubscriptionInfo = ({
             </>
           )}
         </div>
-        {!subActive && (
-          <StripeCheckoutForm handleCheckout={handleCheckout} teamSlug={teamSlug} subscriptionActive={subActive} />
-        )}
+        <StripeCheckoutForm handleCheckout={handleCheckout} teamSlug={teamSlug} subscriptionActive={subActive} />
       </div>
 
       {/* Subscription Details */}

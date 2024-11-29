@@ -342,7 +342,7 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
 
             {
               process.env.NEXT_PUBLIC_SELF_HOSTING ? <div /> :
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 py-8">
                   <div className="text-xl font-[family-name:var(--font-geist-mono)]">
                     Current Plan
                   </div>
