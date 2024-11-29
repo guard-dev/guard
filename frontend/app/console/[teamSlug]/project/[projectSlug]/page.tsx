@@ -240,13 +240,13 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
                     </div>
                   }
                 </div>
-                <div className="rounded-md border">
+                <div className="rounded-lg border bg-gradient-to-br from-white via-neutral-100/80 to-neutral-100 dark:from-neutral-900 dark:via-neutral-900/50 dark:to-neutral-900/30">
                   <Table>
                     <TableHeader>
-                      {table.getHeaderGroups().map((headerGroup) => (
-                        <TableRow key={headerGroup.id}>
-                          {headerGroup.headers.map((header) => (
-                            <TableHead key={header.id}>
+                      <TableRow className="hover:bg-transparent border-neutral-200 dark:border-neutral-800">
+                        {table.getHeaderGroups().map((headerGroup) => (
+                          headerGroup.headers.map((header) => (
+                            <TableHead key={header.id} className="font-[family-name:var(--font-geist-mono)]">
                               {header.isPlaceholder
                                 ? null
                                 : flexRender(
@@ -254,22 +254,22 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
                                   header.getContext()
                                 )}
                             </TableHead>
-                          ))}
-                        </TableRow>
-                      ))}
+                          ))
+                        ))}
+                      </TableRow>
                     </TableHeader>
                     <TableBody>
                       {table.getRowModel().rows?.length ? (
                         table.getRowModel().rows.map((row) => (
                           <TableRow
                             key={row.id}
-                            className={'hover:bg-muted/50 cursor-pointer'}
+                            className="hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50 cursor-pointer border-neutral-200 dark:border-neutral-800"
                             onClick={() => {
                               router.push(`/console/${teamSlug}/project/${projectSlug}/scan/${row.original.scanId}`)
                             }}
                           >
                             {row.getVisibleCells().map((cell) => (
-                              <TableCell key={cell.id}>
+                              <TableCell key={cell.id} className="font-[family-name:var(--font-geist-mono)]">
                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                               </TableCell>
                             ))}
@@ -277,7 +277,7 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
                         ))
                       ) : (
                         <TableRow>
-                          <TableCell colSpan={columns.length} className="h-24 text-center">
+                          <TableCell colSpan={columns.length} className="h-24 text-center font-[family-name:var(--font-geist-mono)]">
                             No results.
                           </TableCell>
                         </TableRow>
@@ -291,43 +291,59 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
           <TabsContent value="settings" className="py-4">
 
             <div className="flex flex-col gap-2">
-              <div className="text-xl">
+              <div className="text-xl font-[family-name:var(--font-geist-mono)]">
                 Connected Accounts
               </div>
-              <Table>
-                <TableCaption>A list of your connected cloud accounts.</TableCaption>
-                <TableHeader>
-                  <TableHead className="w-[100px]">Cloud</TableHead>
-                  <TableHead>Account Number</TableHead>
-                  <TableHead>External ID</TableHead>
-                </TableHeader>
-                <TableBody>
-                  {connections?.map((c, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell>
-                        <FaAws size={30} />
-                      </TableCell>
-                      <TableCell>
-                        {c.accountId}
-                      </TableCell>
-                      <TableCell>
-                        {c.externalId}
-                      </TableCell>
-                      <TableCell>
-                        <Button size={"icon"} variant={"ghost"} disabled>
-                          <Trash2Icon />
-                        </Button>
-                      </TableCell>
+              <div className="rounded-lg border bg-gradient-to-br from-white via-neutral-100/80 to-neutral-100 dark:from-neutral-900 dark:via-neutral-900/50 dark:to-neutral-900/30">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent border-neutral-200 dark:border-neutral-800">
+                      <TableHead className="w-[100px] font-[family-name:var(--font-geist-mono)]">Cloud</TableHead>
+                      <TableHead className="font-[family-name:var(--font-geist-mono)]">Account Number</TableHead>
+                      <TableHead className="font-[family-name:var(--font-geist-mono)]">External ID</TableHead>
+                      <TableHead className="font-[family-name:var(--font-geist-mono)]">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {connections?.map((c, idx) => (
+                      <TableRow key={idx} className="hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50 border-neutral-200 dark:border-neutral-800">
+                        <TableCell className="font-[family-name:var(--font-geist-mono)]">
+                          <FaAws size={30} />
+                        </TableCell>
+                        <TableCell className="font-[family-name:var(--font-geist-mono)]">
+                          {c.accountId}
+                        </TableCell>
+                        <TableCell className="font-[family-name:var(--font-geist-mono)]">
+                          {c.externalId}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-red-500"
+                            disabled
+                          >
+                            <Trash2Icon className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {!connections?.length && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="h-24 text-center font-[family-name:var(--font-geist-mono)]">
+                          No AWS accounts connected.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
 
             {
               process.env.NEXT_PUBLIC_SELF_HOSTING ? <div /> :
                 <div className="flex flex-col gap-2">
-                  <div className="text-xl">
+                  <div className="text-xl font-[family-name:var(--font-geist-mono)]">
                     Current Plan
                   </div>
                   <ShowSubscriptionInfo
@@ -432,7 +448,7 @@ const LoadingSkeleton = () => (
     <div className="flex justify-start mb-4">
       <Skeleton className="h-10 w-[100px]" />
     </div>
-    <div className="rounded-md border">
+    <div className="rounded-lg border bg-gradient-to-br from-white via-neutral-100/80 to-neutral-100 dark:from-neutral-900 dark:via-neutral-900/50 dark:to-neutral-900/30">
       <Table>
         <TableHeader>
           <TableRow>

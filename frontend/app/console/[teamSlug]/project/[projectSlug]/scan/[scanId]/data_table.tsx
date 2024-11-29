@@ -132,55 +132,67 @@ export function DataTable({ data: _data, scanCompleted }: DataTableProps) {
   })
 
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between py-4">
+    <div className="w-full space-y-4">
+      <div className="flex items-center justify-between">
         <Input
-          placeholder="Search services or regions..."
-          value={globalFilter}
-          onChange={(event) => setGlobalFilter(event.target.value)}
+          placeholder="Filter scans..."
+          value={(table.getColumn("service")?.getFilterValue() as string) ?? ""}
+          onChange={(event) =>
+            table.getColumn("service")?.setFilterValue(event.target.value)
+          }
           className="max-w-sm"
         />
-        {!scanCompleted && (
-          <div className="flex items-center text-muted-foreground">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Scan in progress...
-          </div>
-        )}
-        {scanCompleted && (
-          <div className="flex items-center text-muted-foreground">
-            <Check className="mr-2 h-4 w-4" />
-            Scan completed
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {!scanCompleted && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Scan in progress...
+            </div>
+          )}
+          {scanCompleted && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Check className="h-4 w-4 text-green-500" />
+              Scan completed
+            </div>
+          )}
+        </div>
       </div>
-      <div className="rounded-md border">
+
+      <div className="rounded-lg border bg-gradient-to-br from-white via-neutral-100/80 to-neutral-100 dark:from-neutral-900 dark:via-neutral-900/50 dark:to-neutral-900/30">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
+            <TableRow className="hover:bg-transparent border-neutral-200 dark:border-neutral-800">
+              {table.getHeaderGroups().map((headerGroup) => (
+                headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id} className="font-[family-name:var(--font-geist-mono)]">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                    </TableHead>
+                  )
+                })
+              ))}
+            </TableRow>
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="cursor-pointer hover:bg-muted/50"
+                  data-state={row.getIsSelected() && "selected"}
+                  className="hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50 cursor-pointer border-neutral-200 dark:border-neutral-800"
+                  onClick={() => router.push(`${pathname}/details/${row.original.scanItemId}`)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} onClick={() => router.push(`${pathname}/details/${row.original.scanItemId}`)}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    <TableCell key={cell.id} className="font-[family-name:var(--font-geist-mono)]">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -189,7 +201,7 @@ export function DataTable({ data: _data, scanCompleted }: DataTableProps) {
               <TableRow>
                 <TableCell
                   colSpan={scanColumns.length}
-                  className="h-24 text-center"
+                  className="h-24 text-center font-[family-name:var(--font-geist-mono)]"
                 >
                   No results.
                 </TableCell>
@@ -198,12 +210,14 @@ export function DataTable({ data: _data, scanCompleted }: DataTableProps) {
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
+
+      <div className="flex items-center justify-end space-x-2">
         <Button
           variant="outline"
           size="sm"
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
+          className="rounded-full font-[family-name:var(--font-geist-mono)]"
         >
           Previous
         </Button>
@@ -212,6 +226,7 @@ export function DataTable({ data: _data, scanCompleted }: DataTableProps) {
           size="sm"
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
+          className="rounded-full font-[family-name:var(--font-geist-mono)]"
         >
           Next
         </Button>
