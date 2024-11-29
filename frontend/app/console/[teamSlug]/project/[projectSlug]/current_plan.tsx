@@ -50,8 +50,8 @@ export const ShowSubscriptionInfo = ({
   return (
     <div className="w-full space-y-6">
       {/* Subscription Status */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between flex-col gap-2">
+        <div className="flex items-center gap-3 w-full">
           {subActive ? (
             <>
               <Badge variant="outline" className="bg-gradient-to-r from-green-100 to-green-50 dark:from-green-900 dark:to-green-800 text-green-800 dark:text-green-100 border-green-200 dark:border-green-700">
