@@ -106,29 +106,9 @@ export function DataTable({ data: _data, scanCompleted }: DataTableProps) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = React.useState('')
   const pathname = usePathname()
-
-
   const router = useRouter();
 
-  const cleanData = (data: SCAN_ITEMS) => ({
-    ...data,
-    resourceCost: data.resourceCost,
-    region: cleanString(data.region),
-    remedy: cleanString(data.remedy),
-    service: cleanString(data.service),
-    summary: cleanString(data.summary),
-    findings: data.findings.map((f: string) => cleanString(f)),
-    scanItemEntries: data.scanItemEntries.map((entry: any) => ({
-      ...entry,
-      findings: entry.findings.map((f: string) => cleanString(f)),
-      title: cleanString(entry.title),
-      summary: cleanString(entry.summary),
-      remedy: cleanString(entry.remedy),
-      commands: entry.commands.map((c: string) => cleanString(c)).filter((c: string) => c.length > 0),
-    })),
-  });
-
-  const data = _data.map(cleanData);
+  const data = React.useMemo(() => _data.map(cleanData), [_data]);
 
   const table = useReactTable({
     data,
@@ -239,6 +219,24 @@ export function DataTable({ data: _data, scanCompleted }: DataTableProps) {
     </div>
   )
 }
+
+const cleanData = (data: SCAN_ITEMS) => ({
+  ...data,
+  resourceCost: data.resourceCost,
+  region: cleanString(data.region),
+  remedy: cleanString(data.remedy),
+  service: cleanString(data.service),
+  summary: cleanString(data.summary),
+  findings: data.findings.map((f: string) => cleanString(f)),
+  scanItemEntries: data.scanItemEntries.map((entry: any) => ({
+    ...entry,
+    findings: entry.findings.map((f: string) => cleanString(f)),
+    title: cleanString(entry.title),
+    summary: cleanString(entry.summary),
+    remedy: cleanString(entry.remedy),
+    commands: entry.commands.map((c: string) => cleanString(c)).filter((c: string) => c.length > 0),
+  })),
+});
 
 const cleanString = (string: string) => {
   // First, replace escaped quotes (\" or \') with unescaped quotes
