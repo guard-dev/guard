@@ -26,6 +26,7 @@ Guard.dev is an open-source, AI-powered cloud security tool designed to scan and
        -e AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key \
        ghcr.io/guard-dev/guard:latest
    ```
+   Attach the following policy to the IAM User: [templates/guard-self-host-policy.json](./templates/guard-self-host-policy.json).
 
 2. **Access Guard.dev**:
    Open your browser and navigate to `http://localhost:3000`.
