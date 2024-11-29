@@ -165,6 +165,7 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
 
   useEffect(() => {
     if (scanData) {
+      router.push(`/console/${teamSlug}/project/${projectSlug}/scan/${scanData.startScan}`)
       refetch();
       setDialogOpen(false);
     }
@@ -262,11 +263,9 @@ const TeamPage = ({ params }: { params: { teamSlug: string; projectSlug: string 
                         table.getRowModel().rows.map((row) => (
                           <TableRow
                             key={row.id}
-                            className={`${!row.original.scanCompleted ? 'opacity-50' : 'hover:bg-muted/50 cursor-pointer'}`}
+                            className={'hover:bg-muted/50 cursor-pointer'}
                             onClick={() => {
-                              if (row.original.scanCompleted) {
-                                router.push(`/console/${teamSlug}/project/${projectSlug}/scan/${row.original.scanId}`)
-                              }
+                              router.push(`/console/${teamSlug}/project/${projectSlug}/scan/${row.original.scanId}`)
                             }}
                           >
                             {row.getVisibleCells().map((cell) => (

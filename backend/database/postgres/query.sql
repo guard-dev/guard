@@ -132,6 +132,9 @@ UPDATE scan_item SET resource_cost = resource_cost + $1 WHERE scan_item_id = $2 
 -- name: GetScanItemsByScanId :many
 SELECT * FROM scan_item WHERE scan_id = $1;
 
+-- name: GetScanItemByScanIdAndScanItemId :one
+SELECT * FROM scan_item WHERE scan_id = $1 AND scan_item_id = $2;
+
 -------------------- Scan Item Entry Queries --------------------
 
 -- name: CreateNewScanItemEntry :one

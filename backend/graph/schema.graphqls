@@ -54,7 +54,7 @@ type AccountConnection {
 
 type Scan {
   scanId: String!
-  scanItems: [ScanItem!]!
+  scanItems(scanItemId: Int64): [ScanItem!]!
   scanCompleted: Boolean!
   created: Int64!
   regionCount: Int!
@@ -63,6 +63,7 @@ type Scan {
 }
 
 type ScanItem {
+  scanItemId: Int64!
   service: String!
   region: String!
   findings: [String!]!
