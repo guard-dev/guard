@@ -33,21 +33,19 @@ export default function RootLayout({
 
   const content = (
     <html lang="en">
-      <CSPostHogProvider>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
         >
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <Analytics />
-            {children}
-          </ThemeProvider>
-        </body>
-      </CSPostHogProvider>
+          <Analytics />
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 
@@ -59,7 +57,9 @@ export default function RootLayout({
   // Normal flow with Clerk authentication
   return (
     <ClerkProvider>
-      <ApolloProviderWrapper>{content}</ApolloProviderWrapper>
+      <CSPostHogProvider>
+        <ApolloProviderWrapper>{content}</ApolloProviderWrapper>
+      </CSPostHogProvider>
     </ClerkProvider>
   );
 }
