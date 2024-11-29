@@ -225,22 +225,6 @@ export default function DetailsPage({
                 </dl>
               </CardContent>
             </Card>
-
-            {scanItem.remedy && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-green-500" />
-                    Quick Fix
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-                    {scanItem.remedy}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
       </div>
