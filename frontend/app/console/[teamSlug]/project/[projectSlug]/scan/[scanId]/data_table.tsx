@@ -27,16 +27,9 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { SCAN_ITEMS } from "./page"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
 import { Check, Loader2 } from "lucide-react"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 
 const scanColumns: ColumnDef<SCAN_ITEMS>[] = [
   {
@@ -112,6 +105,10 @@ export function DataTable({ data: _data, scanCompleted }: DataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = React.useState('')
+  const pathname = usePathname()
+
+
+  const router = useRouter();
 
   const cleanData = (data: SCAN_ITEMS) => ({
     ...data,
@@ -197,92 +194,23 @@ export function DataTable({ data: _data, scanCompleted }: DataTableProps) {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <Sheet key={row.id}>
-                  <SheetTrigger asChild>
-                    <TableRow className="cursor-pointer hover:bg-muted/50">
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} onClick={() => console.log("hello")}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </SheetTrigger>
-                  <SheetContent className="w-full md:w-[800px] flex flex-col gap-8 md:max-w-[800px] overflow-y-auto">
-                    <SheetHeader>
-                      <SheetTitle>
-                        {row.getValue("service")}
-                      </SheetTitle>
-                      <SheetDescription>
-                        {row.getValue("region")}
-                      </SheetDescription>
-                    </SheetHeader>
-
-                    <div className="flex flex-col gap-8">
-                      <div className="flex flex-col gap-2 overflow-y-auto">
-                        <div className="overflow-y-auto rounded max-h-[200px]">
-                          {row.getValue("summary")}
-                        </div>
-                      </div>
-
-                      <Accordion type="single" collapsible>
-                        {row.original.scanItemEntries.length > 0 && (
-                          row.original.scanItemEntries.map((entry, idx) => (
-                            <AccordionItem value={entry.title} key={idx}>
-                              <AccordionTrigger className="font-bold">{entry.title}</AccordionTrigger>
-                              <AccordionContent>
-                                <div className="flex flex-col gap-8" key={idx}>
-                                  <div className="flex flex-col gap-2" key={idx}>
-                                    <div className="overflow-y-auto rounded max-h-[200px]">
-                                      {entry.summary}
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col gap-2" key={idx}>
-                                    <div className="font-bold">
-                                      Action Items
-                                    </div>
-                                    <div className="overflow-y-auto rounded max-h-[200px]">
-                                      {entry.remedy}
-                                    </div>
-
-                                    {entry.commands.length ?
-                                      <>
-                                        <div className="p-4 bg-neutral-800 text-neutral-100 rounded-md font-mono flex flex-col gap-5">
-                                          {entry.commands.map((cmd: any, idx: number) => (
-                                            <div key={idx}>
-                                              <code key={idx}>
-                                                {cmd}
-                                              </code>
-                                            </div>
-                                          ))}
-                                        </div>
-                                        <div>
-                                          <div>
-                                            {"Disclaimer: These commands are for guidance only. Please review and validate them to ensure they align with your environment's specific configurations. "}
-                                            <Link href={"https://docs.aws.amazon.com/cli/latest/reference/#available-services"} target="_blank" className="text-blue-700 underline">
-                                              Refer to AWS CLI Documentation
-                                            </Link>
-                                          </div>
-                                        </div>
-                                      </>
-                                      :
-                                      <div />
-                                    }
-
-
-                                  </div>
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          ))
-                        )}
-                      </Accordion>
-                    </div>
-                  </SheetContent>
-                </Sheet>
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} onClick={() => router.push(`${pathname}/details/${row.original.scanItemId}`)}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={scanColumns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={scanColumns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -324,4 +252,3 @@ const cleanString = (string: string) => {
 
   return cleanedString;
 };
-

@@ -10,6 +10,7 @@ export const GET_SCANS = gql`
           regionCount
           resourceCost
           scanItems {
+            scanItemId
             service
             region
             findings
