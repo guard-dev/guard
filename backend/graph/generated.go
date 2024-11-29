@@ -98,7 +98,7 @@ type ComplexityRoot struct {
 		ResourceCost  func(childComplexity int) int
 		ScanCompleted func(childComplexity int) int
 		ScanID        func(childComplexity int) int
-		ScanItems     func(childComplexity int) int
+		ScanItems     func(childComplexity int, scanItemID *int64) int
 		ServiceCount  func(childComplexity int) int
 	}
 
@@ -108,6 +108,7 @@ type ComplexityRoot struct {
 		Remedy          func(childComplexity int) int
 		ResourceCost    func(childComplexity int) int
 		ScanItemEntries func(childComplexity int) int
+		ScanItemID      func(childComplexity int) int
 		Service         func(childComplexity int) int
 		Summary         func(childComplexity int) int
 	}
@@ -183,7 +184,7 @@ type QueryResolver interface {
 }
 type ScanResolver interface {
 	ScanID(ctx context.Context, obj *postgres.Scan) (string, error)
-	ScanItems(ctx context.Context, obj *postgres.Scan) ([]postgres.ScanItem, error)
+	ScanItems(ctx context.Context, obj *postgres.Scan, scanItemID *int64) ([]postgres.ScanItem, error)
 
 	Created(ctx context.Context, obj *postgres.Scan) (int64, error)
 }
@@ -406,7 +407,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Scan.ScanItems(childComplexity), true
+		args, err := ec.field_Scan_scanItems_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Scan.ScanItems(childComplexity, args["scanItemId"].(*int64)), true
 
 	case "Scan.serviceCount":
 		if e.complexity.Scan.ServiceCount == nil {
@@ -449,6 +455,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ScanItem.ScanItemEntries(childComplexity), true
+
+	case "ScanItem.scanItemId":
+		if e.complexity.ScanItem.ScanItemID == nil {
+			break
+		}
+
+		return e.complexity.ScanItem.ScanItemID(childComplexity), true
 
 	case "ScanItem.service":
 		if e.complexity.ScanItem.Service == nil {
@@ -1208,6 +1221,29 @@ func (ec *executionContext) field_Query_teams_argsTeamSlug(
 		var zeroVal *string
 		return zeroVal, graphql.ErrorOnPath(ctx, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp))
 	}
+}
+
+func (ec *executionContext) field_Scan_scanItems_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	arg0, err := ec.field_Scan_scanItems_argsScanItemID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["scanItemId"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Scan_scanItems_argsScanItemID(
+	ctx context.Context,
+	rawArgs map[string]interface{},
+) (*int64, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("scanItemId"))
+	if tmp, ok := rawArgs["scanItemId"]; ok {
+		return ec.unmarshalOInt642ᚖint64(ctx, tmp)
+	}
+
+	var zeroVal *int64
+	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Team_projects_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
@@ -2440,7 +2476,7 @@ func (ec *executionContext) _Scan_scanItems(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Scan().ScanItems(rctx, obj)
+		return ec.resolvers.Scan().ScanItems(rctx, obj, fc.Args["scanItemId"].(*int64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2457,7 +2493,7 @@ func (ec *executionContext) _Scan_scanItems(ctx context.Context, field graphql.C
 	return ec.marshalNScanItem2ᚕguarddevᚋdatabaseᚋpostgresᚐScanItemᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Scan_scanItems(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Scan_scanItems(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Scan",
 		Field:      field,
@@ -2465,6 +2501,8 @@ func (ec *executionContext) fieldContext_Scan_scanItems(_ context.Context, field
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "scanItemId":
+				return ec.fieldContext_ScanItem_scanItemId(ctx, field)
 			case "service":
 				return ec.fieldContext_ScanItem_service(ctx, field)
 			case "region":
@@ -2482,6 +2520,17 @@ func (ec *executionContext) fieldContext_Scan_scanItems(_ context.Context, field
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ScanItem", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Scan_scanItems_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -2701,6 +2750,50 @@ func (ec *executionContext) fieldContext_Scan_resourceCost(_ context.Context, fi
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ScanItem_scanItemId(ctx context.Context, field graphql.CollectedField, obj *postgres.ScanItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ScanItem_scanItemId(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScanItemID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt642int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ScanItem_scanItemId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ScanItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6933,6 +7026,11 @@ func (ec *executionContext) _ScanItem(ctx context.Context, sel ast.SelectionSet,
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ScanItem")
+		case "scanItemId":
+			out.Values[i] = ec._ScanItem_scanItemId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "service":
 			out.Values[i] = ec._ScanItem_service(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

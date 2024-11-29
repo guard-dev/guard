@@ -478,6 +478,32 @@ func (q *Queries) GetScanByScanIdProjectId(ctx context.Context, arg GetScanBySca
 	return i, err
 }
 
+const getScanItemByScanIdAndScanItemId = `-- name: GetScanItemByScanIdAndScanItemId :one
+SELECT scan_item_id, scan_id, service, region, resource_cost, findings, summary, remedy, created FROM scan_item WHERE scan_id = $1 AND scan_item_id = $2
+`
+
+type GetScanItemByScanIdAndScanItemIdParams struct {
+	ScanID     uuid.UUID
+	ScanItemID int64
+}
+
+func (q *Queries) GetScanItemByScanIdAndScanItemId(ctx context.Context, arg GetScanItemByScanIdAndScanItemIdParams) (ScanItem, error) {
+	row := q.db.QueryRowContext(ctx, getScanItemByScanIdAndScanItemId, arg.ScanID, arg.ScanItemID)
+	var i ScanItem
+	err := row.Scan(
+		&i.ScanItemID,
+		&i.ScanID,
+		&i.Service,
+		&i.Region,
+		&i.ResourceCost,
+		pq.Array(&i.Findings),
+		&i.Summary,
+		&i.Remedy,
+		&i.Created,
+	)
+	return i, err
+}
+
 const getScanItemByScanItemId = `-- name: GetScanItemByScanItemId :one
 
 SELECT scan_item_id, scan_id, service, region, resource_cost, findings, summary, remedy, created FROM scan_item WHERE scan_id = $1

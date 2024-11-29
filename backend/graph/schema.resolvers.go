@@ -562,10 +562,22 @@ func (r *scanResolver) ScanID(ctx context.Context, obj *postgres.Scan) (string, 
 }
 
 // ScanItems is the resolver for the scanItems field.
-func (r *scanResolver) ScanItems(ctx context.Context, obj *postgres.Scan) ([]postgres.ScanItem, error) {
+func (r *scanResolver) ScanItems(ctx context.Context, obj *postgres.Scan, scanItemID *int64) ([]postgres.ScanItem, error) {
 	tracer := otel.Tracer("graph/ScanItems")
 	ctx, span := tracer.Start(ctx, "ScanItems")
 	defer span.End()
+
+	if scanItemID != nil {
+		item, err := r.Database.GetScanItemByScanIdAndScanItemId(ctx, postgres.GetScanItemByScanIdAndScanItemIdParams{
+			ScanID:     obj.ScanID,
+			ScanItemID: *scanItemID,
+		})
+		if err != nil {
+			span.RecordError(err)
+		}
+
+		return []postgres.ScanItem{item}, err
+	}
 
 	items, err := r.Database.GetScanItemsByScanId(ctx, obj.ScanID)
 	if err != nil {
