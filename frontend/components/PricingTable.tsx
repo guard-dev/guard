@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { useRouter } from 'next/navigation';
 
 interface PricingTableProps {
   handleCheckout?: (lookupString: string) => any;
@@ -56,7 +55,6 @@ const PricingTable: React.FC<PricingTableProps> = ({ handleCheckout }) => {
     },
   ];
 
-  const router = useRouter();
 
   return (
     <div className="w-full mx-auto font-[family-name:var(--font-geist-mono)]">
