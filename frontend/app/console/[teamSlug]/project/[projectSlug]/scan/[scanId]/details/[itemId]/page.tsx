@@ -89,7 +89,7 @@ export default function DetailsPage({
   }
 
   return (
-    <div className="flex w-full min-h-screen bg-background">
+    <div className="flex w-full h-full bg-background">
       <div className="flex-1 flex flex-col max-w-screen-2xl mx-auto px-6 py-8">
         <div className="flex items-center gap-4 mb-8">
           <Link href={parentPath}>
