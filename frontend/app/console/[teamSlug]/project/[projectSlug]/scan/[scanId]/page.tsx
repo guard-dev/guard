@@ -73,23 +73,27 @@ const ScanPage = ({ params }: { params: { teamSlug: string; projectSlug: string;
 
   return (
     <div className="space-y-6 flex w-full h-full items-center justify-center flex-col py-5">
-      <div className="flex items-center gap-4 w-full max-w-screen-xl">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-2 pl-0 font-normal"
-          asChild
-        >
-          <Link href={parentPath}>
-            <ArrowLeft className="h-4 w-4" />
-            Back to All Scans
-          </Link>
-        </Button>
-      </div>
+      {loading ?
+        <div className="flex items-center gap-4 w-full max-w-screen-xl h-full flex-col">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 pl-0 font-normal"
+            asChild
+          >
+            <Link href={parentPath}>
+              <ArrowLeft className="h-4 w-4" />
+              Back to All Scans
+            </Link>
+          </Button>
+          <DataTable data={scans || []} scanCompleted={scanCompleted} />
+        </div>
+        :
+        <div className="flex w-full h-full max-w-screen-xl flex-col">
+          <LoadingSkeleton />
+        </div>
+      }
 
-      <div className="flex w-full h-full max-w-screen-xl flex-col">
-        <DataTable data={scans || []} scanCompleted={scanCompleted} />
-      </div>
     </div>
   );
 };
