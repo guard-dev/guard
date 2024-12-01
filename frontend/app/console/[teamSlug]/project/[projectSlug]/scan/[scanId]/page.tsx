@@ -38,7 +38,7 @@ const ScanPage = ({ params }: { params: { teamSlug: string; projectSlug: string;
       <div className="flex items-center py-4">
         <Skeleton className="h-10 w-[300px]" /> {/* Skeleton for the input field */}
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-lg border bg-gradient-to-br from-white via-neutral-100/80 to-neutral-100 dark:from-neutral-900 dark:via-neutral-900/50 dark:to-neutral-900/30">
         <Table>
           <TableHeader>
             <TableRow>
