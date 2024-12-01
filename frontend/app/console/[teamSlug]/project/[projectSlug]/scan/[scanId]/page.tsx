@@ -7,11 +7,17 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable } from "./data_table";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export type SCAN_ITEMS = GetScansQuery["teams"][0]["projects"][0]["scans"][0]["scanItems"][0];
 
 const ScanPage = ({ params }: { params: { teamSlug: string; projectSlug: string; scanId: string } }) => {
   const { teamSlug, projectSlug, scanId } = params;
+  const pathname = usePathname();
+  const parentPath = pathname.split('/scan/')[0];
 
   const [scanCompleted, setScanComplete] = useState(false);
 
@@ -63,14 +69,26 @@ const ScanPage = ({ params }: { params: { teamSlug: string; projectSlug: string;
     </div>
   );
 
+  if (loading) return <LoadingSkeleton />;
+
   return (
-    <div className="flex w-full h-full items-center justify-center flex-col py-5">
+    <div className="space-y-6 flex w-full h-full items-center justify-center flex-col py-5">
+      <div className="flex items-center gap-4 w-full max-w-screen-xl">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2 pl-0 font-normal"
+          asChild
+        >
+          <Link href={parentPath}>
+            <ArrowLeft className="h-4 w-4" />
+            Back to All Scans
+          </Link>
+        </Button>
+      </div>
+
       <div className="flex w-full h-full max-w-screen-xl flex-col">
-        {loading ? (
-          <LoadingSkeleton />
-        ) : (
-          <DataTable data={scans || []} scanCompleted={scanCompleted} />
-        )}
+        <DataTable data={scans || []} scanCompleted={scanCompleted} />
       </div>
     </div>
   );
