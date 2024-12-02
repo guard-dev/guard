@@ -199,6 +199,7 @@ func (r *mutationResolver) StartScan(ctx context.Context, teamSlug string, proje
 	})
 
 	connections, _ := r.Database.GetConnectionsByProjectId(ctx, pj.ProjectID)
+	accountId := connections[0].AccountID
 
 	r.Logger.Logger(ctx).Info(
 		"[graph/StartScan] Starting Scan",
@@ -246,20 +247,6 @@ func (r *mutationResolver) StartScan(ctx context.Context, teamSlug string, proje
 	go func(newCtx context.Context) {
 		for _, reg := range regions {
 			for _, ser := range services {
-
-				// Get account ID using GetAccountId function
-				accountId, err := r.AWSMiddleware.GetAccountID(accessKeyID, secretAccessKey)
-				if err != nil {
-					r.Logger.Logger(newCtx).Error(
-						"[graph/StartScan] Could not get account ID",
-						zap.Error(err),
-						zap.String("teamSlug", teamSlug),
-						zap.String("projectSlug", projectSlug),
-						zap.String("region", reg),
-						zap.String("service", ser),
-					)
-					continue
-				}
 
 				scanRes, err := r.AWSMiddleware.StartScan(newCtx, accessKeyID, secretAccessKey, sessionToken, []string{reg}, []string{ser}, accountId)
 				if err != nil {
