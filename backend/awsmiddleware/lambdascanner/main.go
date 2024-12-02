@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
-	"strings"
-
 	"guarddev/logger"
 	"guarddev/modelapi/geminiapi"
+	"net/url"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -17,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.uber.org/zap"
 )
 
 type LambdaScanner struct {
@@ -52,13 +52,19 @@ func (scanner *LambdaScanner) ListFunctions(ctx context.Context) ([]*lambda.Func
 	ctx, span := tracer.Start(ctx, "ListFunctions")
 	defer span.End()
 
+	scanner.logger.Logger(ctx).Info("Starting Lambda functions listing")
+
 	result, err := scanner.lambdaClient.ListFunctions(&lambda.ListFunctionsInput{})
 	if err != nil {
 		span.RecordError(err)
+		scanner.logger.Logger(ctx).Error("Failed to list Lambda functions",
+			zap.Error(err))
 		return nil, fmt.Errorf("error listing Lambda functions: %v", err)
 	}
 
 	span.SetAttributes(attribute.Int("function_count", len(result.Functions)))
+	scanner.logger.Logger(ctx).Info("Successfully listed Lambda functions",
+		zap.Int("function_count", len(result.Functions)))
 	return result.Functions, nil
 }
 
@@ -68,17 +74,28 @@ func (scanner *LambdaScanner) CheckFunctionIAMRole(ctx context.Context, function
 	ctx, span := tracer.Start(ctx, "CheckFunctionIAMRole")
 	defer span.End()
 
+	funcName := aws.StringValue(function.FunctionName)
+	scanner.logger.Logger(ctx).Info("Checking IAM role for Lambda function",
+		zap.String("function_name", funcName))
+
 	var findings []string
 
 	roleArn := aws.StringValue(function.Role)
 	if roleArn == "" {
-		findings = append(findings, fmt.Sprintf("WARNING: Lambda function %s does not have a valid IAM role assigned.", aws.StringValue(function.FunctionName)))
+		msg := fmt.Sprintf("WARNING: Lambda function %s does not have a valid IAM role assigned.", funcName)
+		findings = append(findings, msg)
+		scanner.logger.Logger(ctx).Warn("Lambda function missing IAM role",
+			zap.String("function_name", funcName))
 		return findings, nil
 	}
 
 	roleParts := strings.Split(roleArn, "/")
 	if len(roleParts) < 2 {
-		findings = append(findings, fmt.Sprintf("WARNING: Lambda function %s has an invalid IAM role ARN: %s", aws.StringValue(function.FunctionName), roleArn))
+		msg := fmt.Sprintf("WARNING: Lambda function %s has an invalid IAM role ARN: %s", funcName, roleArn)
+		findings = append(findings, msg)
+		scanner.logger.Logger(ctx).Warn("Invalid IAM role ARN",
+			zap.String("function_name", funcName),
+			zap.String("role_arn", roleArn))
 		return findings, nil
 	}
 	roleName := roleParts[1]
@@ -86,9 +103,17 @@ func (scanner *LambdaScanner) CheckFunctionIAMRole(ctx context.Context, function
 	_, err := scanner.iamClient.GetRole(&iam.GetRoleInput{RoleName: aws.String(roleName)})
 	if err != nil {
 		if strings.Contains(err.Error(), "NoSuchEntity") {
-			findings = append(findings, fmt.Sprintf("WARNING: IAM role %s for Lambda function %s does not exist.", roleName, aws.StringValue(function.FunctionName)))
+			msg := fmt.Sprintf("WARNING: IAM role %s for Lambda function %s does not exist.", roleName, funcName)
+			findings = append(findings, msg)
+			scanner.logger.Logger(ctx).Warn("IAM role does not exist",
+				zap.String("function_name", funcName),
+				zap.String("role_name", roleName))
 		} else {
 			span.RecordError(err)
+			scanner.logger.Logger(ctx).Error("Failed to get IAM role",
+				zap.String("function_name", funcName),
+				zap.String("role_name", roleName),
+				zap.Error(err))
 			return nil, fmt.Errorf("error getting IAM role %s: %v", roleName, err)
 		}
 		return findings, nil
@@ -97,13 +122,27 @@ func (scanner *LambdaScanner) CheckFunctionIAMRole(ctx context.Context, function
 	policies, err := scanner.iamClient.ListAttachedRolePolicies(&iam.ListAttachedRolePoliciesInput{RoleName: aws.String(roleName)})
 	if err != nil {
 		span.RecordError(err)
+		scanner.logger.Logger(ctx).Error("Failed to list attached role policies",
+			zap.String("function_name", funcName),
+			zap.String("role_name", roleName),
+			zap.Error(err))
 		return nil, fmt.Errorf("error listing attached policies for role %s: %v", roleName, err)
 	}
 
+	scanner.logger.Logger(ctx).Debug("Analyzing attached policies",
+		zap.String("function_name", funcName),
+		zap.String("role_name", roleName),
+		zap.Int("policy_count", len(policies.AttachedPolicies)))
+
 	for _, policy := range policies.AttachedPolicies {
+		policyName := aws.StringValue(policy.PolicyName)
 		policyDetails, err := scanner.iamClient.GetPolicy(&iam.GetPolicyInput{PolicyArn: policy.PolicyArn})
 		if err != nil {
-			findings = append(findings, fmt.Sprintf("Error retrieving policy %s: %v", aws.StringValue(policy.PolicyName), err))
+			msg := fmt.Sprintf("Error retrieving policy %s: %v", policyName, err)
+			findings = append(findings, msg)
+			scanner.logger.Logger(ctx).Error("Failed to get policy details",
+				zap.String("policy_name", policyName),
+				zap.Error(err))
 			continue
 		}
 
@@ -112,45 +151,67 @@ func (scanner *LambdaScanner) CheckFunctionIAMRole(ctx context.Context, function
 			VersionId: policyDetails.Policy.DefaultVersionId,
 		})
 		if err != nil {
-			findings = append(findings, fmt.Sprintf("Error retrieving policy version: %v", err))
+			msg := fmt.Sprintf("Error retrieving policy version: %v", err)
+			findings = append(findings, msg)
+			scanner.logger.Logger(ctx).Error("Failed to get policy version",
+				zap.String("policy_name", policyName),
+				zap.Error(err))
 			continue
 		}
 
-		// Decode the policy document
 		decodedDocument, err := url.QueryUnescape(*policyVersion.PolicyVersion.Document)
 		if err != nil {
 			span.RecordError(err)
-			findings = append(findings, fmt.Sprintf("Error decoding policy document for policy %s: %v", aws.StringValue(policy.PolicyName), err))
+			scanner.logger.Logger(ctx).Error("Failed to decode policy document",
+				zap.String("policy_name", policyName),
+				zap.Error(err))
+			findings = append(findings, fmt.Sprintf("Error decoding policy document for policy %s: %v", policyName, err))
 			continue
 		}
 
 		var policyDoc map[string]interface{}
 		err = json.Unmarshal([]byte(decodedDocument), &policyDoc)
 		if err != nil {
-			findings = append(findings, fmt.Sprintf("Error parsing policy document for policy %s: %v", aws.StringValue(policy.PolicyName), err))
+			scanner.logger.Logger(ctx).Error("Failed to parse policy document",
+				zap.String("policy_name", policyName),
+				zap.Error(err))
+			findings = append(findings, fmt.Sprintf("Error parsing policy document for policy %s: %v", policyName, err))
 			continue
 		}
 
 		statements, ok := policyDoc["Statement"].([]interface{})
 		if !ok {
-			findings = append(findings, fmt.Sprintf("Invalid policy document structure for policy %s", aws.StringValue(policy.PolicyName)))
+			scanner.logger.Logger(ctx).Warn("Invalid policy document structure",
+				zap.String("policy_name", policyName))
+			findings = append(findings, fmt.Sprintf("Invalid policy document structure for policy %s", policyName))
 			continue
 		}
 
 		for _, stmt := range statements {
 			statement, ok := stmt.(map[string]interface{})
 			if !ok {
-				findings = append(findings, fmt.Sprintf("Invalid statement structure in policy %s", aws.StringValue(policy.PolicyName)))
+				scanner.logger.Logger(ctx).Warn("Invalid statement structure",
+					zap.String("policy_name", policyName))
+				findings = append(findings, fmt.Sprintf("Invalid statement structure in policy %s", policyName))
 				continue
 			}
 			if action, ok := statement["Action"].(interface{}); ok {
 				if action == "*" {
-					findings = append(findings, fmt.Sprintf("WARNING: Lambda function %s has overly permissive actions in IAM role %s.", aws.StringValue(function.FunctionName), roleName))
+					msg := fmt.Sprintf("WARNING: Lambda function %s has overly permissive actions in IAM role %s.", funcName, roleName)
+					findings = append(findings, msg)
+					scanner.logger.Logger(ctx).Warn("Overly permissive IAM policy detected",
+						zap.String("function_name", funcName),
+						zap.String("role_name", roleName),
+						zap.String("policy_name", policyName))
 				}
 			}
 		}
 	}
 
+	scanner.logger.Logger(ctx).Info("Completed IAM role check",
+		zap.String("function_name", funcName),
+		zap.String("role_name", roleName),
+		zap.Int("finding_count", len(findings)))
 	return findings, nil
 }
 
@@ -160,19 +221,37 @@ func (scanner *LambdaScanner) CheckSensitiveEnvironmentVariables(ctx context.Con
 	ctx, span := tracer.Start(ctx, "CheckSensitiveEnvironmentVariables")
 	defer span.End()
 
+	funcName := aws.StringValue(function.FunctionName)
+	scanner.logger.Logger(ctx).Info("Checking environment variables",
+		zap.String("function_name", funcName))
+
 	var findings []string
 
 	envVars := function.Environment
 	if envVars != nil && envVars.Variables != nil {
-		for key, _ := range envVars.Variables {
+		scanner.logger.Logger(ctx).Debug("Analyzing environment variables",
+			zap.String("function_name", funcName),
+			zap.Int("variable_count", len(envVars.Variables)))
+
+		for key := range envVars.Variables {
 			if strings.Contains(strings.ToLower(key), "key") || strings.Contains(strings.ToLower(key), "secret") {
-				findings = append(findings, fmt.Sprintf("WARNING: Lambda function %s has potentially sensitive environment variable: %s=REDACTED", aws.StringValue(function.FunctionName), key))
+				msg := fmt.Sprintf("WARNING: Lambda function %s has potentially sensitive environment variable: %s=REDACTED", funcName, key)
+				findings = append(findings, msg)
+				scanner.logger.Logger(ctx).Warn("Potentially sensitive environment variable detected",
+					zap.String("function_name", funcName),
+					zap.String("variable_name", key))
 			}
 		}
 	} else {
-		findings = append(findings, fmt.Sprintf("No environment variables found for Lambda function %s.", aws.StringValue(function.FunctionName)))
+		msg := fmt.Sprintf("No environment variables found for Lambda function %s.", funcName)
+		findings = append(findings, msg)
+		scanner.logger.Logger(ctx).Info("No environment variables found",
+			zap.String("function_name", funcName))
 	}
 
+	scanner.logger.Logger(ctx).Info("Completed environment variable check",
+		zap.String("function_name", funcName),
+		zap.Int("finding_count", len(findings)))
 	return findings
 }
 
@@ -182,29 +261,46 @@ func (scanner *LambdaScanner) CheckCloudWatchLogs(ctx context.Context, function 
 	ctx, span := tracer.Start(ctx, "CheckCloudWatchLogs")
 	defer span.End()
 
+	funcName := aws.StringValue(function.FunctionName)
+	scanner.logger.Logger(ctx).Info("Checking CloudWatch Logs configuration",
+		zap.String("function_name", funcName))
+
 	var findings []string
 
 	roleArn := aws.StringValue(function.Role)
 	if roleArn == "" {
-		findings = append(findings, fmt.Sprintf("WARNING: Lambda function %s does not have a valid IAM role assigned.", aws.StringValue(function.FunctionName)))
+		msg := fmt.Sprintf("WARNING: Lambda function %s does not have a valid IAM role assigned.", funcName)
+		findings = append(findings, msg)
+		scanner.logger.Logger(ctx).Warn("Lambda function missing IAM role",
+			zap.String("function_name", funcName))
 		return findings, nil
 	}
 
 	roleParts := strings.Split(roleArn, "/")
 	if len(roleParts) < 2 {
-		findings = append(findings, fmt.Sprintf("WARNING: Lambda function %s has an invalid IAM role ARN: %s", aws.StringValue(function.FunctionName), roleArn))
+		msg := fmt.Sprintf("WARNING: Lambda function %s has an invalid IAM role ARN: %s", funcName, roleArn)
+		findings = append(findings, msg)
+		scanner.logger.Logger(ctx).Warn("Invalid IAM role ARN",
+			zap.String("function_name", funcName),
+			zap.String("role_arn", roleArn))
 		return findings, nil
 	}
 	roleName := roleParts[1]
 
-	_, err := scanner.iamClient.GetRole(&iam.GetRoleInput{
-		RoleName: aws.String(roleName),
-	})
+	_, err := scanner.iamClient.GetRole(&iam.GetRoleInput{RoleName: aws.String(roleName)})
 	if err != nil {
 		if strings.Contains(err.Error(), "NoSuchEntity") {
-			findings = append(findings, fmt.Sprintf("WARNING: IAM role %s for Lambda function %s does not exist.", roleName, aws.StringValue(function.FunctionName)))
+			msg := fmt.Sprintf("WARNING: IAM role %s for Lambda function %s does not exist.", roleName, funcName)
+			findings = append(findings, msg)
+			scanner.logger.Logger(ctx).Warn("IAM role does not exist",
+				zap.String("function_name", funcName),
+				zap.String("role_name", roleName))
 		} else {
 			span.RecordError(err)
+			scanner.logger.Logger(ctx).Error("Failed to get IAM role",
+				zap.String("function_name", funcName),
+				zap.String("role_name", roleName),
+				zap.Error(err))
 			return nil, fmt.Errorf("error getting IAM role %s: %v", roleName, err)
 		}
 		return findings, nil
@@ -216,8 +312,17 @@ func (scanner *LambdaScanner) CheckCloudWatchLogs(ctx context.Context, function 
 	})
 	if err != nil {
 		span.RecordError(err)
+		scanner.logger.Logger(ctx).Error("Failed to list attached role policies",
+			zap.String("function_name", funcName),
+			zap.String("role_name", roleName),
+			zap.Error(err))
 		return nil, fmt.Errorf("error listing attached policies for role %s: %v", roleName, err)
 	}
+
+	scanner.logger.Logger(ctx).Debug("Analyzing attached policies",
+		zap.String("function_name", funcName),
+		zap.String("role_name", roleName),
+		zap.Int("policy_count", len(policies.AttachedPolicies)))
 
 	for _, policy := range policies.AttachedPolicies {
 		policyDetail, err := scanner.iamClient.GetPolicy(&iam.GetPolicyInput{
@@ -225,6 +330,9 @@ func (scanner *LambdaScanner) CheckCloudWatchLogs(ctx context.Context, function 
 		})
 		if err != nil {
 			span.RecordError(err)
+			scanner.logger.Logger(ctx).Error("Failed to get policy details",
+				zap.String("policy_name", aws.StringValue(policy.PolicyName)),
+				zap.Error(err))
 			continue
 		}
 
@@ -234,13 +342,18 @@ func (scanner *LambdaScanner) CheckCloudWatchLogs(ctx context.Context, function 
 		})
 		if err != nil {
 			span.RecordError(err)
+			scanner.logger.Logger(ctx).Error("Failed to get policy version",
+				zap.String("policy_name", aws.StringValue(policy.PolicyName)),
+				zap.Error(err))
 			continue
 		}
 
-		// Decode the policy document
 		decodedDocument, err := url.QueryUnescape(*version.PolicyVersion.Document)
 		if err != nil {
 			span.RecordError(err)
+			scanner.logger.Logger(ctx).Error("Failed to decode policy document",
+				zap.String("policy_name", aws.StringValue(policy.PolicyName)),
+				zap.Error(err))
 			findings = append(findings, fmt.Sprintf("Error decoding policy document for policy %s: %v", aws.StringValue(policy.PolicyName), err))
 			continue
 		}
@@ -249,11 +362,16 @@ func (scanner *LambdaScanner) CheckCloudWatchLogs(ctx context.Context, function 
 		err = json.Unmarshal([]byte(decodedDocument), &policyDoc)
 		if err != nil {
 			span.RecordError(err)
+			scanner.logger.Logger(ctx).Error("Failed to parse policy document",
+				zap.String("policy_name", aws.StringValue(policy.PolicyName)),
+				zap.Error(err))
 			continue
 		}
 
 		statements, ok := policyDoc["Statement"].([]interface{})
 		if !ok {
+			scanner.logger.Logger(ctx).Warn("Invalid policy document structure",
+				zap.String("policy_name", aws.StringValue(policy.PolicyName)))
 			findings = append(findings, fmt.Sprintf("Invalid policy document structure for policy %s", aws.StringValue(policy.PolicyName)))
 			continue
 		}
@@ -261,6 +379,8 @@ func (scanner *LambdaScanner) CheckCloudWatchLogs(ctx context.Context, function 
 		for _, stmt := range statements {
 			statement, ok := stmt.(map[string]interface{})
 			if !ok {
+				scanner.logger.Logger(ctx).Warn("Invalid statement structure",
+					zap.String("policy_name", aws.StringValue(policy.PolicyName)))
 				findings = append(findings, fmt.Sprintf("Invalid statement structure in policy %s", aws.StringValue(policy.PolicyName)))
 				continue
 			}
@@ -282,11 +402,18 @@ func (scanner *LambdaScanner) CheckCloudWatchLogs(ctx context.Context, function 
 	}
 
 	if hasLoggingPermission {
-		findings = append(findings, fmt.Sprintf("CloudWatch logging is enabled for Lambda function %s.", aws.StringValue(function.FunctionName)))
+		findings = append(findings, fmt.Sprintf("CloudWatch logging is enabled for Lambda function %s.", funcName))
+		scanner.logger.Logger(ctx).Info("CloudWatch logging is enabled",
+			zap.String("function_name", funcName))
 	} else {
-		findings = append(findings, fmt.Sprintf("WARNING: CloudWatch logging is not enabled for Lambda function %s.", aws.StringValue(function.FunctionName)))
+		findings = append(findings, fmt.Sprintf("WARNING: CloudWatch logging is not enabled for Lambda function %s.", funcName))
+		scanner.logger.Logger(ctx).Warn("CloudWatch logging is not enabled",
+			zap.String("function_name", funcName))
 	}
 
+	scanner.logger.Logger(ctx).Info("Completed CloudWatch logs check",
+		zap.String("function_name", funcName),
+		zap.Int("finding_count", len(findings)))
 	return findings, nil
 }
 
@@ -296,13 +423,25 @@ func (scanner *LambdaScanner) CheckFunctionTimeout(ctx context.Context, function
 	ctx, span := tracer.Start(ctx, "CheckFunctionTimeout")
 	defer span.End()
 
-	var findings []string
+	funcName := aws.StringValue(function.FunctionName)
+	scanner.logger.Logger(ctx).Info("Checking function timeout configuration",
+		zap.String("function_name", funcName),
+		zap.Int64("timeout", aws.Int64Value(function.Timeout)))
 
+	var findings []string
 	timeout := aws.Int64Value(function.Timeout)
+
 	if timeout > 60 {
-		findings = append(findings, fmt.Sprintf("WARNING: Lambda function %s has a timeout set to %d seconds, which may be too high.", aws.StringValue(function.FunctionName), timeout))
+		msg := fmt.Sprintf("WARNING: Lambda function %s has a high timeout value of %d seconds", funcName, timeout)
+		findings = append(findings, msg)
+		scanner.logger.Logger(ctx).Warn("High function timeout detected",
+			zap.String("function_name", funcName),
+			zap.Int64("timeout", timeout))
 	}
 
+	scanner.logger.Logger(ctx).Info("Completed timeout configuration check",
+		zap.String("function_name", funcName),
+		zap.Int("finding_count", len(findings)))
 	return findings
 }
 
@@ -312,12 +451,26 @@ func (scanner *LambdaScanner) CheckVpcConfiguration(ctx context.Context, functio
 	ctx, span := tracer.Start(ctx, "CheckVpcConfiguration")
 	defer span.End()
 
+	funcName := aws.StringValue(function.FunctionName)
+	scanner.logger.Logger(ctx).Info("Checking VPC configuration",
+		zap.String("function_name", funcName))
+
 	var findings []string
 
-	vpcConfig := function.VpcConfig
-	if vpcConfig == nil || len(vpcConfig.SubnetIds) == 0 {
-		findings = append(findings, fmt.Sprintf("WARNING: Lambda function %s is not configured in a VPC.", aws.StringValue(function.FunctionName)))
+	if function.VpcConfig == nil || len(function.VpcConfig.SubnetIds) == 0 {
+		msg := fmt.Sprintf("WARNING: Lambda function %s is not configured in a VPC", funcName)
+		findings = append(findings, msg)
+		scanner.logger.Logger(ctx).Warn("Function not in VPC",
+			zap.String("function_name", funcName))
+	} else {
+		scanner.logger.Logger(ctx).Debug("Function VPC configuration",
+			zap.String("function_name", funcName),
+			zap.Strings("subnet_ids", aws.StringValueSlice(function.VpcConfig.SubnetIds)),
+			zap.Strings("security_group_ids", aws.StringValueSlice(function.VpcConfig.SecurityGroupIds)))
 	}
 
+	scanner.logger.Logger(ctx).Info("Completed VPC configuration check",
+		zap.String("function_name", funcName),
+		zap.Int("finding_count", len(findings)))
 	return findings
 }

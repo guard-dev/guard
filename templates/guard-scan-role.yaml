@@ -87,6 +87,8 @@ Resources:
                   - 'iam:GetAccountSummary'
                   - 'iam:GetAccessKeyLastUsed'
                   - 'iam:GetLoginProfile'
+                  - 'iam:GetCredentialReport'
+                  - 'iam:GenerateCredentialReport'
                 Resource: "*"
               - Effect: Allow
                 Action:
