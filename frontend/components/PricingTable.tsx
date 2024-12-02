@@ -89,27 +89,35 @@ const PricingTable: React.FC<PricingTableProps> = ({ handleCheckout }) => {
               </div>
             </div>
 
-            <a
-              href={plan.href}
-              target={plan.href.startsWith('http') ? '_blank' : undefined}
-              rel={plan.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-              className="mt-auto"
-            >
+            {handleCheckout && plan.lookupKey ? (
               <Button
                 className={`w-full rounded-full ${plan.name === 'Basic' || plan.name === 'Pro'
                   ? 'bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-700 hover:from-neutral-800 hover:via-neutral-700 hover:to-neutral-600 text-white border-0 dark:from-white dark:via-neutral-200 dark:to-neutral-400 dark:hover:from-neutral-200 dark:hover:via-neutral-300 dark:hover:to-neutral-500 dark:text-neutral-900'
                   : 'bg-gradient-to-r from-neutral-100 via-white to-neutral-200 hover:from-white hover:via-neutral-100 hover:to-neutral-300 dark:from-neutral-800 dark:via-neutral-900 dark:to-neutral-950 dark:hover:from-neutral-700 dark:hover:via-neutral-800 dark:hover:to-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white'
                   }`}
                 variant={plan.name === 'Basic' || plan.name === 'Pro' ? 'default' : 'outline'}
-                onClick={() => {
-                  if (handleCheckout && plan.lookupKey) {
-                    handleCheckout(plan.lookupKey);
-                  }
-                }}
+                onClick={() => handleCheckout(plan.lookupKey)}
               >
                 {plan.cta}
               </Button>
-            </a>
+            ) : (
+              <a
+                href={plan.href}
+                target={plan.href.startsWith('http') ? '_blank' : undefined}
+                rel={plan.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                className="mt-auto"
+              >
+                <Button
+                  className={`w-full rounded-full ${plan.name === 'Basic' || plan.name === 'Pro'
+                    ? 'bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-700 hover:from-neutral-800 hover:via-neutral-700 hover:to-neutral-600 text-white border-0 dark:from-white dark:via-neutral-200 dark:to-neutral-400 dark:hover:from-neutral-200 dark:hover:via-neutral-300 dark:hover:to-neutral-500 dark:text-neutral-900'
+                    : 'bg-gradient-to-r from-neutral-100 via-white to-neutral-200 hover:from-white hover:via-neutral-100 hover:to-neutral-300 dark:from-neutral-800 dark:via-neutral-900 dark:to-neutral-950 dark:hover:from-neutral-700 dark:hover:via-neutral-800 dark:hover:to-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white'
+                    }`}
+                  variant={plan.name === 'Basic' || plan.name === 'Pro' ? 'default' : 'outline'}
+                >
+                  {plan.cta}
+                </Button>
+              </a>
+            )}
           </div>
         ))}
       </div>
