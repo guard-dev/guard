@@ -147,7 +147,7 @@ const Installation = ({ externalId, refetch }: { externalId: string, refetch: ()
               className="mt-2 rounded-full bg-gradient-to-r from-neutral-100 via-white to-neutral-200 hover:from-white hover:via-neutral-100 hover:to-neutral-300 dark:from-neutral-800 dark:via-neutral-900 dark:to-neutral-950 dark:hover:from-neutral-700 dark:hover:via-neutral-800 dark:hover:to-neutral-900 border border-neutral-200 dark:border-neutral-700"
             >
               <Link
-                href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create/review?templateURL=https://guard-cloudformation-templates.s3.amazonaws.com/guard-scan-role.yaml&stackName=GuardSecurityScanRole&param_ExternalId=${externalId}`}
+                href={`https://us-east-1.console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create/review?templateURL=https://raw.githubusercontent.com/guard-dev/guard/main/templates/guard-scan-role.yaml&stackName=GuardSecurityScanRole&param_ExternalId=${externalId}`}
                 target="_blank"
                 className="flex items-center gap-2"
               >
