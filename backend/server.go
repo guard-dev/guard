@@ -7,6 +7,8 @@ import (
 	"guarddev/database/postgres"
 	"guarddev/graph"
 	"guarddev/logger"
+	"guarddev/modelapi"
+	"guarddev/modelapi/anthropicapi"
 	"guarddev/modelapi/geminiapi"
 	"guarddev/paymentsmiddleware"
 	"log"
@@ -49,9 +51,19 @@ func main() {
 	logMiddleware := logger.Connect(logger.LoggerConnectProps{Production: false})
 	postgresClient := postgres.Connect(ctx, postgres.DatabaseConnectProps{Logger: logMiddleware})
 
-	gemininClient := geminiapi.Connect(ctx, geminiapi.GeminiConnectProps{
-		Logger: logMiddleware,
-	})
+	// Initialize the selected model based on environment variable
+	var selectedModel modelapi.ModelAPI
+	modelType := os.Getenv("MODEL_TYPE")
+	switch modelType {
+	case "anthropic":
+		selectedModel = anthropicapi.Connect(ctx, anthropicapi.AnthropicConnectProps{
+			Logger: logMiddleware,
+		})
+	default: // Default to Gemini
+		selectedModel = geminiapi.Connect(ctx, geminiapi.GeminiConnectProps{
+			Logger: logMiddleware,
+		})
+	}
 
 	Logger := logMiddleware.Logger(ctx)
 
@@ -64,13 +76,13 @@ func main() {
 		})
 	}
 
-	awsMiddleware := awsmiddleware.Connect(logMiddleware, gemininClient)
+	awsMiddleware := awsmiddleware.Connect(logMiddleware, selectedModel)
 
 	srv := graph.Connnect(ctx, graph.GraphConnectProps{
 		Logger:        logMiddleware,
 		Database:      postgresClient,
 		AWSMiddleware: awsMiddleware,
-		Gemini:        gemininClient,
+		Gemini:        selectedModel, // Note: This might need to be updated if the graph package expects specifically Gemini
 		Payments:      payments,
 	})
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"guarddev/logger"
-	"guarddev/modelapi/geminiapi"
+	"guarddev/modelapi"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -18,12 +18,12 @@ import (
 type S3Scanner struct {
 	s3Client  *s3.S3
 	logger    *logger.LogMiddleware
-	Gemini    *geminiapi.Gemini
+	Gemini    modelapi.ModelAPI
 	accountId string
 }
 
 // Initialize an S3 scanner with assumed credentials
-func NewS3Scanner(accessKey, secretKey, sessionToken, region string, accountId string, logger *logger.LogMiddleware, gemini *geminiapi.Gemini) *S3Scanner {
+func NewS3Scanner(accessKey, secretKey, sessionToken, region string, accountId string, logger *logger.LogMiddleware, gemini modelapi.ModelAPI) *S3Scanner {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(region),
 		Credentials: credentials.NewStaticCredentials(
