@@ -73,6 +73,18 @@ const HeroSection = () => {
           </Button>
         </a>
       </div>
+
+      <div className="w-full max-w-[800px] mx-auto pt-10">
+        <div style={{ position: 'relative', paddingBottom: '62.42774566473989%', height: 0 }}>
+          <iframe
+            src="https://www.loom.com/embed/56357f3d2b054bdfa07e250e98deb48e?sid=f402639d-98d9-4fb5-b11f-eeb0b0beb59a"
+            frameBorder="0"
+            allowFullScreen
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          />
+        </div>
+      </div>
+
     </div>
   );
 }
