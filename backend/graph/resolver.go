@@ -6,7 +6,7 @@ import (
 	"guarddev/awsmiddleware"
 	"guarddev/database/postgres"
 	"guarddev/logger"
-	"guarddev/modelapi/geminiapi"
+	"guarddev/modelapi"
 	"guarddev/paymentsmiddleware"
 )
 
@@ -18,6 +18,6 @@ type Resolver struct {
 	Database      *postgres.Database
 	Logger        *logger.LogMiddleware
 	AWSMiddleware *awsmiddleware.AWSMiddleware
-	Gemini        *geminiapi.Gemini
+	Gemini        modelapi.ModelAPI
 	Payments      *paymentsmiddleware.Payments
 }

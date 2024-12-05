@@ -7,7 +7,10 @@ import (
 	"guarddev/database/postgres"
 	"guarddev/graph"
 	"guarddev/logger"
+	"guarddev/modelapi"
+	"guarddev/modelapi/anthropicapi"
 	"guarddev/modelapi/geminiapi"
+	"guarddev/modelapi/grokapi"
 	"guarddev/paymentsmiddleware"
 	"log"
 	"net/http"
@@ -17,6 +20,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
+	"go.uber.org/zap"
 
 	"github.com/hyperdxio/opentelemetry-logs-go/exporters/otlp/otlplogs"
 	sdk "github.com/hyperdxio/opentelemetry-logs-go/sdk/logs"
@@ -49,11 +53,32 @@ func main() {
 	logMiddleware := logger.Connect(logger.LoggerConnectProps{Production: false})
 	postgresClient := postgres.Connect(ctx, postgres.DatabaseConnectProps{Logger: logMiddleware})
 
-	gemininClient := geminiapi.Connect(ctx, geminiapi.GeminiConnectProps{
-		Logger: logMiddleware,
-	})
-
 	Logger := logMiddleware.Logger(ctx)
+
+	// Initialize the selected model based on environment variable
+	var selectedModel modelapi.ModelAPI
+	modelType := os.Getenv("MODEL_TYPE")
+	switch modelType {
+	case "anthropic":
+		Logger.Info("[ModelAPI] Initializing Anthropic model")
+		selectedModel = anthropicapi.Connect(ctx, anthropicapi.AnthropicConnectProps{
+			Logger: logMiddleware,
+		})
+	case "grok":
+		Logger.Info("[ModelAPI] Initializing Grok model")
+		selectedModel = grokapi.Connect(ctx, grokapi.GrokConnectProps{
+			Logger: logMiddleware,
+		})
+	default:
+		if modelType == "" {
+			Logger.Info("[ModelAPI] No model type specified, defaulting to Gemini")
+		} else {
+			Logger.Info("[ModelAPI] Unknown model type, defaulting to Gemini", zap.String("specified_type", modelType))
+		}
+		selectedModel = geminiapi.Connect(ctx, geminiapi.GeminiConnectProps{
+			Logger: logMiddleware,
+		})
+	}
 
 	var payments *paymentsmiddleware.Payments = nil
 
@@ -64,13 +89,13 @@ func main() {
 		})
 	}
 
-	awsMiddleware := awsmiddleware.Connect(logMiddleware, gemininClient)
+	awsMiddleware := awsmiddleware.Connect(logMiddleware, selectedModel)
 
 	srv := graph.Connnect(ctx, graph.GraphConnectProps{
 		Logger:        logMiddleware,
 		Database:      postgresClient,
 		AWSMiddleware: awsMiddleware,
-		Gemini:        gemininClient,
+		Gemini:        selectedModel, // Note: This might need to be updated if the graph package expects specifically Gemini
 		Payments:      payments,
 	})
 

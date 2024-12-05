@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"guarddev/logger"
-	"guarddev/modelapi/geminiapi"
+	"guarddev/modelapi"
 	"net/url"
 	"time"
 
@@ -20,7 +20,7 @@ import (
 type IAMScanner struct {
 	IAMClient *iam.IAM
 	logger    *logger.LogMiddleware
-	Gemini    *geminiapi.Gemini
+	Gemini    modelapi.ModelAPI
 	accountId string
 }
 
@@ -41,7 +41,7 @@ type Principal struct {
 }
 
 // Initialize an IAM scanner with assumed credentials
-func NewIAMScanner(accessKey, secretKey, sessionToken, region string, accountId string, logger *logger.LogMiddleware, gemini *geminiapi.Gemini) *IAMScanner {
+func NewIAMScanner(accessKey, secretKey, sessionToken, region string, accountId string, logger *logger.LogMiddleware, gemini modelapi.ModelAPI) *IAMScanner {
 	// Create a new AWS session with the provided credentials
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(region),

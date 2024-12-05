@@ -7,7 +7,7 @@ import (
 	"guarddev/awsmiddleware"
 	"guarddev/database/postgres"
 	"guarddev/logger"
-	"guarddev/modelapi/geminiapi"
+	"guarddev/modelapi"
 	"guarddev/paymentsmiddleware"
 	"os"
 	"strings"
@@ -27,7 +27,7 @@ type GraphConnectProps struct {
 	Logger        *logger.LogMiddleware
 	Database      *postgres.Database
 	AWSMiddleware *awsmiddleware.AWSMiddleware
-	Gemini        *geminiapi.Gemini
+	Gemini        modelapi.ModelAPI
 	Payments      *paymentsmiddleware.Payments
 }
 

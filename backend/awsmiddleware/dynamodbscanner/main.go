@@ -3,9 +3,8 @@ package dynamodbscanner
 import (
 	"context"
 	"fmt"
-
 	"guarddev/logger"
-	"guarddev/modelapi/geminiapi"
+	"guarddev/modelapi"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -18,12 +17,12 @@ import (
 type DynamoDBScanner struct {
 	dynamodbClient *dynamodb.DynamoDB
 	logger         *logger.LogMiddleware
-	Gemini         *geminiapi.Gemini
+	Gemini         modelapi.ModelAPI
 	accountId      string
 }
 
 // Initialize a DynamoDB scanner with assumed credentials
-func NewDynamoDBScanner(accessKey, secretKey, sessionToken, region string, accountId string, logger *logger.LogMiddleware, gemini *geminiapi.Gemini) *DynamoDBScanner {
+func NewDynamoDBScanner(accessKey, secretKey, sessionToken, region string, accountId string, logger *logger.LogMiddleware, gemini modelapi.ModelAPI) *DynamoDBScanner {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(region),
 		Credentials: credentials.NewStaticCredentials(

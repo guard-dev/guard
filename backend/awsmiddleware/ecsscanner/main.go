@@ -3,10 +3,9 @@ package ecsscanner
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"guarddev/logger"
-	"guarddev/modelapi/geminiapi"
+	"guarddev/modelapi"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -21,12 +20,12 @@ type ECSScanner struct {
 	ECSClient *ecs.ECS
 	iamClient *iam.IAM
 	logger    *logger.LogMiddleware
-	Gemini    *geminiapi.Gemini
+	Gemini    modelapi.ModelAPI
 	accountId string
 }
 
 // Initialize an ECS scanner with assumed credentials
-func NewECSScanner(accessKey, secretKey, sessionToken, region string, accountId string, logger *logger.LogMiddleware, gemini *geminiapi.Gemini) *ECSScanner {
+func NewECSScanner(accessKey, secretKey, sessionToken, region string, accountId string, logger *logger.LogMiddleware, gemini modelapi.ModelAPI) *ECSScanner {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(region),
 		Credentials: credentials.NewStaticCredentials(

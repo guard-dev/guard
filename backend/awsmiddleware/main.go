@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"guarddev/logger"
-	"guarddev/modelapi/geminiapi"
+	"guarddev/modelapi"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -18,7 +18,7 @@ import (
 type AWSMiddleware struct {
 	stsClient  *sts.STS
 	logger     *logger.LogMiddleware
-	gemini     *geminiapi.Gemini
+	model      modelapi.ModelAPI
 	selfHosted bool
 }
 
@@ -33,7 +33,7 @@ type AssumeRoleResult struct {
 	SessionToken    string
 }
 
-func Connect(logger *logger.LogMiddleware, gemini *geminiapi.Gemini) *AWSMiddleware {
+func Connect(logger *logger.LogMiddleware, model modelapi.ModelAPI) *AWSMiddleware {
 	tracer := otel.Tracer("awsmiddleware/Connect")
 	_, span := tracer.Start(context.Background(), "Connect")
 	defer span.End()
@@ -68,7 +68,7 @@ func Connect(logger *logger.LogMiddleware, gemini *geminiapi.Gemini) *AWSMiddlew
 	return &AWSMiddleware{
 		stsClient:  stsClient,
 		logger:     logger,
-		gemini:     gemini,
+		model:      model,
 		selfHosted: selfHosting,
 	}
 }

@@ -3,7 +3,6 @@ package awsmiddleware
 import (
 	"context"
 	"fmt"
-
 	"guarddev/awsmiddleware/dynamodbscanner"
 	"guarddev/awsmiddleware/ec2scanner"
 	"guarddev/awsmiddleware/ecsscanner"
@@ -78,22 +77,22 @@ func (a *AWSMiddleware) scanService(ctx context.Context, accessKey, secretKey, s
 
 	switch service {
 	case "s3":
-		scanner := s3scanner.NewS3Scanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.gemini)
+		scanner := s3scanner.NewS3Scanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.model)
 		findings, scanItemEntries, err = scanner.ScanS3(ctx, region)
 	case "ec2":
-		scanner := ec2scanner.NewEC2Scanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.gemini)
+		scanner := ec2scanner.NewEC2Scanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.model)
 		findings, scanItemEntries, err = scanner.ScanEC2(ctx, region)
 	case "ecs":
-		scanner := ecsscanner.NewECSScanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.gemini)
+		scanner := ecsscanner.NewECSScanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.model)
 		findings, scanItemEntries, err = scanner.ScanECS(ctx, region)
 	case "lambda":
-		scanner := lambdascanner.NewLambdaScanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.gemini)
+		scanner := lambdascanner.NewLambdaScanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.model)
 		findings, scanItemEntries, err = scanner.ScanLambda(ctx, region)
 	case "dynamodb":
-		scanner := dynamodbscanner.NewDynamoDBScanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.gemini)
+		scanner := dynamodbscanner.NewDynamoDBScanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.model)
 		findings, scanItemEntries, err = scanner.ScanDynamoDB(ctx, region)
 	case "iam":
-		scanner := iamscanner.NewIAMScanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.gemini)
+		scanner := iamscanner.NewIAMScanner(accessKey, secretKey, sessionToken, region, accountId, a.logger, a.model)
 		findings, scanItemEntries, err = scanner.ScanIAM(ctx, region)
 	default:
 		err = fmt.Errorf("unsupported service: %s", service)

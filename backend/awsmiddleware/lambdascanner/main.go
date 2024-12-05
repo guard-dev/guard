@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"guarddev/logger"
+	"guarddev/modelapi"
 	"net/url"
 	"strings"
-
-	"guarddev/logger"
-	"guarddev/modelapi/geminiapi"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -23,12 +22,12 @@ type LambdaScanner struct {
 	lambdaClient *lambda.Lambda
 	iamClient    *iam.IAM
 	logger       *logger.LogMiddleware
-	Gemini       *geminiapi.Gemini
+	Gemini       modelapi.ModelAPI
 	accountId    string
 }
 
 // Initialize a Lambda scanner with assumed credentials
-func NewLambdaScanner(accessKey, secretKey, sessionToken, region string, accountId string, logger *logger.LogMiddleware, gemini *geminiapi.Gemini) *LambdaScanner {
+func NewLambdaScanner(accessKey, secretKey, sessionToken, region string, accountId string, logger *logger.LogMiddleware, gemini modelapi.ModelAPI) *LambdaScanner {
 	sess := session.Must(session.NewSession(&aws.Config{
 		Region: aws.String(region),
 		Credentials: credentials.NewStaticCredentials(
@@ -164,7 +163,7 @@ func (scanner *LambdaScanner) CheckSensitiveEnvironmentVariables(ctx context.Con
 
 	envVars := function.Environment
 	if envVars != nil && envVars.Variables != nil {
-		for key, _ := range envVars.Variables {
+		for key := range envVars.Variables {
 			if strings.Contains(strings.ToLower(key), "key") || strings.Contains(strings.ToLower(key), "secret") {
 				findings = append(findings, fmt.Sprintf("WARNING: Lambda function %s has potentially sensitive environment variable: %s=REDACTED", aws.StringValue(function.FunctionName), key))
 			}
