@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import PricingTable from "@/components/PricingTable";
+//import PricingTable from "@/components/PricingTable";
 import { IconCloudSecurity, IconAI, IconRealTime, IconActionable } from '@/components/Icons';
 import Navbar from "./console/Navbar";
 import { FooterSection } from "./console/Footer";
@@ -25,7 +25,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pricing Section */}
+      {/* Pricing Section 
       <section className="w-full bg-gradient-to-b from-background via-background to-transparent dark:from-background dark:via-background dark:to-transparent pt-20 pb-48">
         <div className="flex-1 flex flex-col items-center w-full max-w-screen-2xl mx-auto px-6">
           <div className="w-full max-w-[1024px]">
@@ -33,6 +33,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      */}
 
       <div className="mt-auto">
         <FooterSection />
