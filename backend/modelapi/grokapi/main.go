@@ -262,7 +262,7 @@ func (a *Grok) generateCommands(ctx context.Context, service, region, accountId,
 	generateCommandsFunc := GetGenerateCommandsFunction()
 
 	requestInput := MakeAPIRequestProps{
-		Retries: 1,
+		Retries: 3,
 		RequestInput: ChatRequestInput{
 			Model:     "grok-beta",
 			MaxTokens: 2048,
@@ -377,7 +377,7 @@ func (a *Grok) summarizeIssues(ctx context.Context, service, region, accountId s
 	summarizeIssuesFunc := GetSummarizeIssuesFunction()
 
 	requestInput := MakeAPIRequestProps{
-		Retries: 1,
+		Retries: 3,
 		RequestInput: ChatRequestInput{
 			Model:     "grok-beta",
 			MaxTokens: 2048,
