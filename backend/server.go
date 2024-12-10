@@ -11,6 +11,7 @@ import (
 	"guarddev/modelapi/anthropicapi"
 	"guarddev/modelapi/geminiapi"
 	"guarddev/modelapi/grokapi"
+	"guarddev/modelapi/groqapi"
 	"guarddev/paymentsmiddleware"
 	"log"
 	"net/http"
@@ -67,6 +68,11 @@ func main() {
 	case "grok":
 		Logger.Info("[ModelAPI] Initializing Grok model")
 		selectedModel = grokapi.Connect(ctx, grokapi.GrokConnectProps{
+			Logger: logMiddleware,
+		})
+	case "groq":
+		Logger.Info("[ModelAPI] Initializing Groq model")
+		selectedModel = groqapi.Connect(ctx, groqapi.GroqConnectProps{
 			Logger: logMiddleware,
 		})
 	default:
