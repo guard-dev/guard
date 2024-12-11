@@ -12,6 +12,7 @@ import (
 	"guarddev/modelapi/geminiapi"
 	"guarddev/modelapi/grokapi"
 	"guarddev/modelapi/groqapi"
+	openrouterapi "guarddev/modelapi/openrouter"
 	"guarddev/paymentsmiddleware"
 	"log"
 	"net/http"
@@ -73,6 +74,11 @@ func main() {
 	case "groq":
 		Logger.Info("[ModelAPI] Initializing Groq model")
 		selectedModel = groqapi.Connect(ctx, groqapi.GroqConnectProps{
+			Logger: logMiddleware,
+		})
+	case "openrouter":
+		Logger.Info("[ModelAPI] Initializing OpenRouter model")
+		selectedModel = openrouterapi.Connect(ctx, openrouterapi.OpenRouterConnectProps{
 			Logger: logMiddleware,
 		})
 	default:
